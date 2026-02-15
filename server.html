@@ -71,6 +71,44 @@
         </style>
 </head>
 <body>
+
+<div id="winterPopup" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+">
+    <div style="
+        background: #1e1e1e;
+        color: white;
+        padding: 30px 40px;
+        border-radius: 12px;
+        text-align: center;
+        max-width: 400px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    ">
+        <h2>Scuffed Attack 3</h2>
+        <p>Startet im Winter 2026 ❄️</p>
+        <button onclick="document.getElementById('winterPopup').style.display='none'"
+            style="
+                margin-top: 15px;
+                padding: 8px 16px;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+            ">
+            Schließen
+        </button>
+    </div>
+</div>
+
+
     <!-- Fullscreen Popup -->
     <div id="fullscreen-popup">
         <button class="close-popup" onclick="closeFullscreenPopup()">×</button> 
