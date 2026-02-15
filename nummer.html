@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <link rel="icon" type="image/png" href="CC v2-1grau (1) - Kopie.png">
+    <nav>
+        <a href="/" >Home</a>
+        <a href="/wetter" >Wetter App</a>
+        <a href="/twitch">Twitch App</a>
+        <a href="/server">Scuffed Attack</a>
+        <a href="/flags">Flags</a>
+        <a href="/nummer" class="active">ID Gen</a>
+    </nav>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID Nummer Generator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="server-style.css">
+    <style>
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .output {
+            margin-top: 20px;
+        }
+
+        .calendar-button {
+            margin-top: 5px;
+        }
+
+        video {
+            width: 100%;
+            max-height: 300px;
+            border: 1px solid black;
+            margin-top: 10px;
+        }
+        .server-cardeins {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff; /* Dunkler Hintergrund */
+            border: 2px solid #4CAF50; /* Grüne Umrandung */
+            color: #4CAF50; /* Grüne Schrift */
+            padding: 12px 30px;
+            border-radius: 8px; /* Abgerundete Ecken */
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            min-width: 250px; /* Einheitliche Breite */
+            text-align: center;
+        }
+        .server-cardeins:hover {
+            background-color: #4CAF50; /* Grün bei Hover */
+            color: white; /* Weiße Schrift bei Hover */
+        }
+        
+        
+</style>
+
+
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1 class="card-textzwei">ID Nummer Generator</h1>
+        <a href="https://craftingkatze.de" target="_">
+            <img src="CC v2-1grau (1) - Kopie.png" alt="Craftingkatze Logo" class="logo" draggable="false">
+        </a>        
+        
+    </header>
+    <br>
+    <div class="container">
+    
+
+        <label for="titel">Titel</label>
+        <input type="text" id="titel" name="titel">
+
+        <label for="fach">Fach</label>
+        <select id="fach">
+            <option value="">Auswählen</option>
+            <option>Mathematik</option>
+            <option>Deutsch</option>
+            <option>Englisch</option>
+            <option>Sparnisch</option>
+            <option>Physik</option>
+            <option>Biologie</option>
+            <option>Chemie</option>
+            <option>Geschichte</option>
+            <option>Erdkunde</option>
+            <option>Kunst</option>
+            <option>Musik</option>
+            <option>N/A</option>
+        </select>
+
+        <label for="datum">Datum</label>
+        <input type="date" id="manualDate" name="manualDate" class="calendar-button">
+
+        <label for="lehrer">Lehrer</label>
+        <input type="text" id="lehrer" name="lehrer">
+
+        <label for="klasse">Klasse</label>
+        <select id="klasse">
+            <option value="">Auswählen</option>
+            <option>01a</option>
+            <option>01b</option>
+            <option>02a</option>
+            <option>02b</option>
+            <option>03a</option>
+            <option>03b</option>
+            <option>04a</option>
+            <option>04b</option>
+            <option>05a</option>
+            <option>05b</option>
+            <option>06a</option>
+            <option>06b</option>
+            <option>07a</option>
+            <option>07b</option>
+            <option>08a</option>
+            <option>08b</option>
+            <option>09a</option>
+            <option>09b</option>
+            <option>10a</option>
+            <option>10b</option>
+            <option>11a</option>
+            <option>11b</option>
+            <option>12a</option>
+            <option>12b</option>
+            <option>13a</option>
+            <option>13b</option>
+            <option>000</option>
+        </select>
+
+        <label for="vorname">Vorname</label>
+        <input type="text" id="vorname" name="vorname" value="Vincent">
+
+        <label for="nachname">Nachname</label>
+        <input type="text" id="nachname" name="nachname" value="G.">
+
+        <div>
+            <input type="radio" id="standard" name="mode" value="standard" checked>
+            <label for="standard">Standard</label>
+            <input type="radio" id="qr" name="mode" value="qr">
+            <label for="qr">QR-Modus</label>
+            <input type="radio" id="barcode-only" name="mode" value="barcode-only">
+            <label for="barcode-only">Nur Barcode</label>
+            <input type="radio" id="qr-only" name="mode" value="qr-only">
+            <label for="qr-only">Nur QR-Code</label>
+        </div>
+        
+
+        
+
+        <button class="server-cardeins" id="generateBtn" onclick="generateSerialNumber()" disabled>Seriennummer generieren</button>
+
+        <div class="output" id="output"></div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.18.6/dist/index.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+        <script>
+            // Add your JavaScript from the generator here
+        </script>
+    </div>
+    <br>
+    <footer>
+        <hr>
+        <div class="footer">
+            <a href="/imp">Impressum</a>
+            <a href="/Datenschutzerklaerung">Datenschutzerklärung</a>
+        </div>
+        <br>
+    </footer>
+
+
+
+        <div class="output" id="output"></div>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+        
+        <script>
+        function generateSerialNumber() {
+            const titel = document.getElementById('titel').value;
+            const fach = document.getElementById('fach').value;
+            const lehrer = document.getElementById('lehrer').value;
+            const klasse = document.getElementById('klasse').value;
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            const datum = document.getElementById('manualDate').value;
+            const vorname = document.getElementById('vorname').value;
+            const nachname = document.getElementById('nachname').value;
+
+            const date = datum ? new Date(datum) : new Date();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = String(date.getFullYear()).slice(-2);
+            const day = String(date.getDate()).padStart(2, '0'); 
+
+            const initialen = (vorname.charAt(0) + nachname.charAt(0)).toUpperCase();
+            const fachAbk = fach === "N/A" ? "NA" : fach.substring(0, 2).toUpperCase();
+            const lehrerAbk = lehrer.substring(0, 2).toUpperCase();
+            const seriennummer = `${initialen}${fachAbk}${lehrerAbk}${klasse.toUpperCase()}${day}${month}${year}`;
+
+            const qrData = {
+                type: 'image/png',
+                data: seriennummer
+            };
+
+            generateQRCode(qrData, function(qrCodeUrl) {
+                generateBarcode(seriennummer, function(barcodeUrl) {
+                    if (mode === 'standard') {
+                        createStandardPDF(titel, fach, datum, lehrer, klasse, seriennummer, qrCodeUrl, barcodeUrl, vorname, nachname, day);
+                    } else if (mode === 'qr') {
+                        createQRModePDF(titel, fach, datum, lehrer, klasse, seriennummer, qrCodeUrl, vorname, nachname, day);
+                    } else if (mode === 'barcode-only') {
+                        createBarcodeOnlyPDF(barcodeUrl);
+                    } else if (mode === 'qr-only') {
+                        createQROnlyPDF(qrCodeUrl);
+                    }
+                });
+            });
+        }
+
+        function createBarcodeOnlyPDF(barcodeUrl) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'mm', [60, 40]); // Querformat
+
+            doc.addImage(barcodeUrl, 'PNG', 5, 10, 50, 20); // Position und Größe des Barcodes
+            doc.autoPrint();
+            window.open(doc.output('bloburl'), '_blank');
+        }
+
+        function createQROnlyPDF(qrCodeUrl) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'mm', [60, 40]); // Querformat
+
+            doc.addImage(qrCodeUrl, 'PNG', 5, 5, 30, 30); // QR-Code Position
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.text(`Titel: ${document.getElementById('titel').value}`, 5, 37);
+            doc.text(`Datum: ${document.getElementById('manualDate').value}`, 5, 41);
+            doc.text(`Fach: ${document.getElementById('fach').value}`, 5, 45);
+
+            doc.autoPrint();
+            window.open(doc.output('bloburl'), '_blank');
+        }
+
+
+
+        
+        function generateQRCode(data, callback) {
+            const url = `https://craftingkatze.de/qrcheck.php?serial=${data.data}`;
+            QRCode.toDataURL(url, function (err, qrCodeUrl) {
+                if (err) {
+                    console.error(err);
+                } else {
+                    callback(qrCodeUrl);
+                }
+            });
+        }
+        
+        function generateBarcode(data, callback) {
+            const canvas = document.createElement('canvas');
+            JsBarcode(canvas, data, { format: 'CODE128' });
+            callback(canvas.toDataURL('image/png'));
+        }
+        
+        function createStandardPDF(titel, fach, datum, lehrer, klasse, seriennummer, qrCodeUrl, barcodeUrl, vorname, nachname, day) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'mm', 'a5');
+            const width = 210;
+            const height = 148;
+        
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.5);
+            doc.rect(10, 10, width - 20, height - 20);
+        
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(46);
+            doc.text(titel, 20, 30);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(35);
+        
+            let yPosition = 50;
+            doc.text(`Fach: ${fach}`, 20, yPosition);
+            yPosition += 15;
+            doc.text(`Lehrer: ${lehrer}`, 20, yPosition);
+            yPosition += 15;
+            doc.text(`Klasse: ${klasse}`, 20, yPosition);
+            yPosition += 15;
+            doc.text(`Datum: ${datum}`, 20, yPosition);
+            yPosition += 15;
+            doc.text(`Nr: ${seriennummer}`, 20, yPosition);
+            yPosition += 15;
+            doc.text(`Name: ${vorname} ${nachname}`, 20, yPosition); // Vorname und Nachname
+            yPosition += 5;
+        
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8);
+            doc.text("Dieses Label ist nur für den privaten Gebrauch und nicht für Lehrer bestimmt.", 20, yPosition);
+        
+            doc.addImage(barcodeUrl, 'PNG', width - 89, height - 140, 80, 20); // Barcode
+            doc.addImage(qrCodeUrl, 'PNG', width - 45, height - 45, 40, 40)
+
+            doc.autoPrint();
+            window.open(doc.output('bloburl'), '_blank');
+        }
+        
+
+
+            function createQRModePDF(titel, fach, datum, lehrer, klasse, seriennummer, qrCodeUrl, vorname, nachname, day) {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('landscape', 'mm', 'a5');
+                const width = 210;
+                const height = 148;
+
+                const cols = 3;
+                const rows = 2;
+
+                const qrWidth = 50;
+                const qrHeight = 50;
+                const boxWidth = 50;
+                const boxHeight = 60;
+                const xMargin = 10;
+                const yMargin = 10;
+                const xSpacing = (width - (cols * boxWidth) - (2 * xMargin)) / (cols - 1);
+                const ySpacing = (height - (rows * boxHeight) - (2 * yMargin)) / (rows - 1);
+                let x, y;
+
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        x = xMargin + col * (boxWidth + xSpacing);
+                        y = yMargin + row * (boxHeight + ySpacing);
+
+                        doc.setDrawColor(0, 0, 0);
+                        doc.setLineWidth(1);
+                        doc.rect(x, y, boxWidth, boxHeight);
+
+                        doc.addImage(qrCodeUrl, 'PNG', x + (boxWidth - qrWidth) / 2, y + 5, qrWidth, qrHeight);
+
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(8);
+                        doc.text(seriennummer, x + boxWidth / 2, y + qrHeight + 8, null, null, 'center');
+                    }
+                }
+
+                doc.autoPrint();
+                window.open(doc.output('bloburl'), '_blank');
+            }
+
+            document.querySelectorAll("input, select").forEach((element) => {
+                element.addEventListener("change", checkFormCompletion);
+            });
+
+            function checkFormCompletion() {
+                const titel = document.getElementById('titel').value;
+                const fach = document.getElementById('fach').value;
+                const datum = document.getElementById('manualDate').value;
+                const lehrer = document.getElementById('lehrer').value;
+                const klasse = document.getElementById('klasse').value;
+                const vorname = document.getElementById('vorname').value;
+                const nachname = document.getElementById('nachname').value;
+
+                const generateBtn = document.getElementById('generateBtn');
+                if (titel && fach && datum && lehrer && klasse && vorname && nachname) {
+                    generateBtn.disabled = false;
+                } else {
+                    generateBtn.disabled = true;
+                }
+            }
+
+            window.onload = function() {
+                setCurrentDate(); // Setze das aktuelle Datum
+            };
+
+            function setCurrentDate() {
+                const manualDateInput = document.getElementById('manualDate');
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+                const dd = String(today.getDate()).padStart(2, '0'); 
+                manualDateInput.value = `${yyyy}-${mm}-${dd}`;
+            }
+            
+        </script>
+    </div>
+</body>
+</html>
