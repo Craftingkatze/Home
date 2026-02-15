@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/128/9092/9092499.png">
+  		<nav>
+      	  <a href="/" >Home</a>
+      	  <a href="/wetter" class="active" >Wetter App</a> <!-- Added link to the weather app -->
+          <a href="/twitch">Twitch App</a>
+          <a href="/server">Scuffed Attack</a>
+          <a href="/flags">Flags</a>
+    	</nav>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Craftingkatze - Wetter App</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .projects {
+            text-align: center;
+            color: white; /* White text */
+        }
+
+        .project-buttons {
+            margin-top: 20px;
+        }
+
+        .project-button {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50; /* Green background */
+            color: white; /* White text */
+            text-decoration: none; /* No underline */
+            border-radius: 5px; /* Rounded corners */
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+
+        .project-button:hover {
+            background-color: #45a049; /* Darker green on hover */
+        }
+
+        /* Banner styles */
+        .download-banner {
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #007BFF;
+            border-radius: 10px;
+            background-color: #ffffff;
+            max-width: 760px;
+            text-align: center;
+        }
+
+        .download-banner h2 {
+            margin: 0;
+            font-size: 2em;
+        }
+
+        .download-banner p {
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+
+        .download-button {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 30px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.2em;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .download-button:hover {
+            background-color: #45a049;
+        }
+
+        /* Weather app styles */
+        #weatherApp {
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #007BFF;
+            border-radius: 10px;
+            background-color: #ffffff;
+            max-width: 1000px;
+            text-align: center;
+        }
+
+        /* Map styles */
+        #map {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        /* Timeline styles */
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 10px 0;
+            list-style: none;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 20px;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Shadow for a modern look */
+            transition: transform 0.3s; /* Smooth hover effect */
+        }
+
+        .timeline-item:hover {
+            transform: scale(1.02); /* Slightly enlarge on hover */
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 20px;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #007BFF; /* Blue circle */
+        }
+
+        .timeline-item h4 {
+            margin: 0;
+            font-size: 1.2em; /* Kleinere Schriftgröße für den Wochentag */
+            color: #007BFF;
+        }
+
+        .timeline-item p {
+            margin: 5px 0;
+            font-size: 0.9em; /* Kleinere Schriftgröße für die Wetterdetails */
+        }
+
+        /* Wettericon-Stile */
+        .weather-icon {
+            width: 40px; /* Anpassung der Icon-Größe */
+            height: 40px; /* Anpassung der Icon-Größe */
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+
+
+    <br>
+    <header>
+        <h1>Wetter App</h1>
+        <a href="https://craftingkatze.de" target="_self">
+            <img src="CC v2-1grau (1) - Kopie.png" alt="Craftingkatze Logo" class="logo" draggable="false">
+        </a>  
+    </header>
+    <main>
+        <div>
+
+        </div>
+
+
+
+
+        <!-- Weather App Section -->
+        <div id="weatherApp">
+            <h2 id="weatherTitle">Wetter App</h2>
+            <p>Klicke auf die blauen maker um wetter informatin über den jewaligen ort zu bekommen!</p>
+            <div id="map"></div>
+            <p>Hier die Wettervorhersage der nächsten tage!</p>
+            <div class="weather-info" id="weatherInfo"></div> <!-- Placeholder for weather forecast -->
+            <ul class="timeline" id="weatherTimeline"></ul> <!-- Timeline for weather forecast -->
+        </div>
+    </main>
+
+    <div class="download-banner">
+        <h2>Wetter App Download!</h2>
+        <p>Ich hab eine Version von der App in Python geschrieben, diese ist noch nicht ganz fertig, würde mich über Feedback freuen. </p>
+        <p>Jetzt Herunterladen!</p>
+        
+        <a href="/VincentsWetterApp.exe" class="project-button" download>Download</a>
+        
+    </div>
+
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let map;
+        const cities = {
+            "Amsterdam": { lat: 52.3676, lon: 4.9041 },
+            "Andorra la Vella": { lat: 42.5078, lon: 1.5211 },
+            "Athen": { lat: 37.9838, lon: 23.7275 },
+            "Belgrad": { lat: 44.7866, lon: 20.4489 },
+            "Berlin": { lat: 52.5200, lon: 13.4050 },
+            "Bern": { lat: 46.9481, lon: 7.4474 },
+            "Bucharest": { lat: 44.4268, lon: 26.1025 },
+            "Budapest": { lat: 47.4979, lon: 19.0402 },
+            "Bratislava": { lat: 48.1482, lon: 17.1067 },
+            "Brüssel": { lat: 50.8503, lon: 4.3517 },
+            "Chisinau": { lat: 47.0105, lon: 28.8638 },
+            "Dublin": { lat: 53.3498, lon: -6.2603 },
+            "Helsinki": { lat: 60.1695, lon: 24.9354 },
+            "Kopenhagen": { lat: 55.6761, lon: 12.5683 },
+            "Kyiv": { lat: 50.4501, lon: 30.5234 },
+            "London": { lat: 51.5074, lon: -0.1278 },
+            "Luxemburg": { lat: 49.6116, lon: 6.1319 },
+            "Madrid": { lat: 40.4168, lon: -3.7038 },
+            "Malta": { lat: 35.8970, lon: 14.5123 },
+            "Minsk": { lat: 53.9045, lon: 27.5590 },
+            "Monaco": { lat: 43.7333, lon: 7.4167 },
+            "Moskau": { lat: 55.7558, lon: 37.6173 },
+            "Oslo": { lat: 59.9139, lon: 10.7522 },
+            "Paris": { lat: 48.8566, lon: 2.3522 },
+            "Prag": { lat: 50.0755, lon: 14.4378 },
+            "Rom": { lat: 41.9028, lon: 12.4964 },
+            "Riga": { lat: 56.9496, lon: 24.1052 },
+            "San Marino": { lat: 43.9333, lon: 12.4500 },
+            "Sarajevo": { lat: 43.8486, lon: 18.3564 },
+            "Sofia": { lat: 42.6977, lon: 23.3219 },
+            "Tallinn": { lat: 59.4372, lon: 24.7536 },
+            "Tirana": { lat: 41.3275, lon: 19.8189 },
+            "Valletta": { lat: 35.8970, lon: 14.5123 },
+            "Vilnius": { lat: 54.6872, lon: 25.2797 },
+            "Warschau": { lat: 52.2297, lon: 21.0122 },
+            "Wien": { lat: 48.2082, lon: 16.3738 },
+            "Zagreb": { lat: 45.8150, lon: 15.9819 },
+            "Hamburg": { lat: 53.5511, lon: 9.9937 },   // Bundesland Hamburg
+            "München": { lat: 48.1351, lon: 11.5820 },   // Bundesland Bayern
+            "Frankfurt am Main": { lat: 50.1109, lon: 8.6821 }, // Bundesland Hessen
+            "Stuttgart": { lat: 48.7758, lon: 9.1829 },  // Bundesland Baden-Württemberg
+            "Düsseldorf": { lat: 51.2277, lon: 6.7735 }, // Bundesland Nordrhein-Westfalen
+            "Mainz": { lat: 49.9929, lon: 8.2473 },       // Bundesland Rheinland-Pfalz
+            "Dresden": { lat: 51.0504, lon: 13.7373 },    // Bundesland Sachsen
+            "Hannover": { lat: 52.3759, lon: 9.7320 },    // Bundesland Niedersachsen
+            "Erfurt": { lat: 50.9787, lon: 11.0299 },     // Bundesland Thüringen
+            "Magdeburg": { lat: 52.1205, lon: 11.6261 },   // Bundesland Sachsen-Anhalt
+            "Potsdam": { lat: 52.3906, lon: 13.0645 },     // Bundesland Brandenburg
+            "Bremen": { lat: 53.0793, lon: 8.8017 },       // Bundesland Bremen
+            "Schwerin": { lat: 53.6290, lon: 11.4133 },    // Bundesland Mecklenburg-Vorpommern
+            "Saarbrücken": { lat: 49.2402, lon: 7.3695 },   // Bundesland Saarland
+            "Kiel": { lat: 54.3233, lon: 10.1228 },        // Bundesland Schleswig-Holstein
+            "Stuttgart": { lat: 48.7758, lon: 9.1829 },    // Bundesland Baden-Württemberg
+        };
+
+        function initMap() {
+            map = L.map('map').setView([51.2, 10.5], 6); // Default to Berlin
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Add markers for cities
+            for (const city in cities) {
+                const { lat, lon } = cities[city];
+                L.marker([lat, lon]).addTo(map)
+                    .bindPopup(city)
+                    .on('click', () => fetchWeather(city));
+            }
+        }
+
+        async function fetchWeather(city) {
+            document.getElementById("weatherTitle").innerText = `Wetter für ${city}`; // Update the title with the selected city
+            const apiKey = 'YOUR_API_KEY'; // Replace with your Open-Meteo API key
+            const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${cities[city].lat}&longitude=${cities[city].lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe%2FBerlin`);
+            const data = await response.json();
+            displayForecast(data.daily);
+        }
+
+        function weatherCodeToIcon(weatherCode) {
+            const weatherIcons = {
+                0: '01d', // Clear sky
+                1: '02d', // Few clouds
+                2: '03d', // Scattered clouds
+                3: '04d', // Broken clouds
+                45: '50d', // Fog
+                48: '50d', // Fog
+                51: '09d', // Drizzle
+                61: '09d', // Rain showers
+                63: '10d', // Rain
+                80: '10d', // Rain showers
+                71: '13d', // Snow
+                73: '13d', // Snow
+                75: '13d', // Snow showers
+                77: '13d', // Snow showers
+                80: '09d', // Rain showers
+                81: '09d', // Rain showers
+                82: '09d', // Rain showers
+                95: '11d', // Thunderstorm
+                96: '11d', // Thunderstorm
+                99: '11d', // Thunderstorm
+            };
+            return weatherIcons[weatherCode] || '01d'; // Default to clear sky if unknown
+        }
+
+        function displayForecast(dailyData) {
+            const timeline = document.getElementById("weatherTimeline");
+            timeline.innerHTML = ''; // Clear previous data
+
+            const weekdays = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+
+            dailyData.temperature_2m_max.forEach((maxTemp, index) => {
+                const minTemp = dailyData.temperature_2m_min[index];
+                const weatherCode = dailyData.weathercode[index];
+                const date = new Date(dailyData.time[index]);
+                const weekday = weekdays[date.getUTCDay()]; // Get the weekday
+                const weatherIcon = weatherCodeToIcon(weatherCode);
+
+                const timelineItem = document.createElement('li');
+                timelineItem.className = 'timeline-item';
+                timelineItem.innerHTML = `
+                        <h4>${weekday}</h4>
+                        <img src="https://openweathermap.org/img/wn/${weatherIcon}.png" alt="Wetter" class="weather-icon">
+                        <p>Max: ${maxTemp}°C / Min: ${minTemp}°C</p>
+                    `;
+                timeline.appendChild(timelineItem);
+            });
+        }
+
+        window.onload = initMap;
+    </script>
+    <br />
+
+    <section class="projects">
+        <h2>Meine Projekte</h2>
+        <p>Dies ist ein teil meiner Projektereihe mit coolen ind nützlichen kleinen Aplikationen. Schau sie dir gerne an:) </p>
+        <div class="project-buttons">
+            <a href="/#Projekte" class="project-button">Hier mehr!</a>
+        </div>
+        <br />
+
+    </section>
+    <hr style="color: #585454;">
+    <br>
+    <div class="footer">
+        <a href="/imp">Impressum</a>
+        <a href="/Datenschutzerklaerung">Datenschutzerklärung</a>
+    </div>
+    <br />
+
+</body>
+</html>
