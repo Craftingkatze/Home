@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live U-Bahnen in Berlin</title>
+    <script src="https://craftingkatze.de/bvg/trainRoutes13.1.26.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .line-container {
+            margin-bottom: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid #eee;
+        }
+        .line-header {
+            padding: 12px 15px;
+            background-color: white;
+            color: #2c3e50;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            user-select: none;
+        }
+        .line-header:hover {
+            background-color: #f8f8f8;
+        }
+        .line-title {
+            font-size: 18px;
+        }
+        .toggle-icon {
+            font-size: 14px;
+            color: #2c3e50;
+            transition: transform 0.2s ease;
+        }
+        .toggle-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+        .line-content {
+            padding: 15px;
+            background-color: white;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        .line-content.collapsed {
+            max-height: 0 !important;
+            padding: 0 15px;
+        }
+        .line-visualization-container {
+            display: flex;
+            margin-bottom: 20px;
+            background-color: white;
+            position: relative;
+        }
+        .vertical-line-track {
+            width: 30px;
+            position: relative;
+            background-color: white;
+            margin-right: 10px;
+        }
+        .line-track {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 4px;
+            height: 100%;
+            background-color: currentColor;
+            transform: translateX(-50%);
+        }
+        .station-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: white;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            transform: translate(-50%, -50%);
+            left: 50%;
+            z-index: 5;
+        }
+        .station-label {
+            margin-left: 10px;
+            padding: 5px 0;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            color: #333;
+        }
+        .station-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            height: 30px;
+            background-color: white;
+        }
+        .train-marker {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: currentColor;
+            border-radius: 50%;
+            border: 3px solid white;
+            transform: translate(-50%, -50%);
+            left: 50%;
+            z-index: 10;
+            transition: top 0.5s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        .vehicle-list {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 15px;
+            background-color: white;
+        }
+        .vehicle-list li {
+            padding: 10px 15px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            border-left: 5px solid;
+            cursor: pointer;
+        }
+        .next-station {
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+            margin: 5px 0;
+        }
+        .vehicle-details {
+            font-size: 12px;
+            color: #555;
+        }
+        .refresh-info {
+            font-size: 12px;
+            color: #777;
+            text-align: right;
+            margin-top: 20px;
+            background-color: white;
+        }
+        
+        /* Tooltip Stile */
+        .train-tooltip {
+            position: fixed; /* Geändert von absolute zu fixed */
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000; /* Erhöht von 100 auf 1000 */
+            max-width: 250px;
+            pointer-events: none;
+            font-size: 13px;
+            display: none;
+        }
+        .train-tooltip h3 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .train-tooltip p {
+            margin: 5px 0;
+        }
+        .train-tooltip .tooltip-label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        /* Linienfarben nur für die Linie und Elemente */
+        .U1-color { color: #7dad4c; }
+        .U2-color { color: #da421e; }
+        .U3-color { color: #16683d; }
+        .U4-color { color: #f0d722; }
+        .U5-color { color: #7e5330; }
+        .U6-color { color: #8c6dab; }
+        .U7-color { color: #009bd5; }
+        .U8-color { color: #224f86; }
+        .U9-color { color: #f3791d; }
+        .U12-color { color: #000768; }
+        
+        .line-U1 { border-color: #7dad4c; }
+        .line-U2 { border-color: #da421e; }
+        .line-U3 { border-color: #16683d; }
+        .line-U4 { border-color: #f0d722; }
+        .line-U5 { border-color: #7e5330; }
+        .line-U6 { border-color: #8c6dab; }
+        .line-U7 { border-color: #009bd5; }
+        .line-U8 { border-color: #224f86; }
+        .line-U9 { border-color: #f3791d; }
+        .line-U12 { border-color: #000768; }
+        
+        /* Hover-Effekte */
+        .train-marker:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            z-index: 20;
+        }
+        .vehicle-list li:hover {
+            background-color: #e8e8e8;
+        }
+        
+        /* Control Buttons */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .control-button {
+            padding: 8px 12px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .control-button:hover {
+            background-color: #1a2a36;
+        }
+
+        /* Neue Stile für nicht identifizierbare Fahrzeuge */
+        .other-vehicles-container {
+            margin-top: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid #eee;
+        }
+        .other-vehicles-header {
+            padding: 12px 15px;
+            background-color: white;
+            color: #2c3e50;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            user-select: none;
+        }
+        .other-vehicles-header:hover {
+            background-color: #f8f8f8;
+        }
+        .other-vehicles-content {
+            padding: 15px;
+            background-color: white;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        .other-vehicles-content.collapsed {
+            max-height: 0 !important;
+            padding: 0 15px;
+        }
+        .other-vehicle {
+            padding: 10px 15px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            border-left: 5px solid #777;
+        }
+        .other-vehicle-type {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .other-vehicle-details {
+            font-size: 12px;
+            color: #555;
+            margin-top: 5px;
+        }
+        .station-item.closed {
+            opacity: 0.35;
+        }
+
+        .station-item.closed .station-marker {
+            background-color: #999;
+        }
+
+        .station-item.closed .station-label {
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Live U-Bahnen in Berlin</h1>
+    <div class="controls">
+        <button id="expand-all" class="control-button">Alle ausklappen</button>
+        <button id="collapse-all" class="control-button">Alle einklappen</button>
+    </div>
+    <div id="lines-container">
+        <!-- Hier werden die Linienabschnitte dynamisch eingefügt -->
+    </div>
+
+    <!-- Neuer Abschnitt für andere Fahrzeuge -->
+    <div class="other-vehicles-container">
+        <div class="other-vehicles-header">
+            <span class="line-title">Andere Fahrzeuge</span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="other-vehicles-content collapsed">
+            <div id="other-vehicles-list"></div>
+        </div>
+    </div>
+
+    <div class="refresh-info">Letzte Aktualisierung: <span id="last-update">-</span></div>
+
+    <script>
+        // Funktion zum Filtern von Zwischenstationen
+        function filterIntermediateStations(stations) {
+            return stations.filter(station => !station.station.includes("Zwischen"));
+        }
+
+        // Alle Linien zusammenfassen (ohne Zwischenstationen)
+        const allLines = {
+            'U1': typeof u1Points !== 'undefined' ? filterIntermediateStations(u1Points) : [],
+            'U2': typeof u2Points !== 'undefined' ? filterIntermediateStations(u2Points) : [],
+            'U3': typeof u3Points !== 'undefined' ? filterIntermediateStations(u3Points) : [],
+            'U4': typeof u4Points !== 'undefined' ? filterIntermediateStations(u4Points) : [],
+            'U5': typeof u5Points !== 'undefined' ? filterIntermediateStations(u5Points) : [],
+            'U6': typeof u6Points !== 'undefined' ? filterIntermediateStations(u6Points) : [],
+            'U7': typeof u7Points !== 'undefined' ? filterIntermediateStations(u7Points) : [],
+            'U8': typeof u8Points !== 'undefined' ? filterIntermediateStations(u8Points) : [],
+            'U9': typeof u9Points !== 'undefined' ? filterIntermediateStations(u9Points) : [],
+            'U12': typeof u12Points !== 'undefined' ? filterIntermediateStations(u12Points) : []
+        };
+
+        // Zustand der geklappten Linien speichern
+        const expandedLines = new Set();
+
+        // Tooltip-Element
+        const tooltip = document.createElement('div');
+        tooltip.className = 'train-tooltip';
+        tooltip.style.display = 'none';
+        document.body.appendChild(tooltip);
+
+        function getMarkerType(vehicle) {
+            const productName = vehicle.line?.productName;
+            if (productName === 'U') return 'U-Bahn';
+            return productName || 'Unbekannt';
+        }
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c * 1000;
+        }
+
+        function findNearestStation(lat, lon, line) {
+            let nearestStation = null;
+            let minDistance = Infinity;
+            
+            const lineStations = allLines[line];
+            
+            lineStations.forEach(station => {
+                const distance = getDistance(lat, lon, station.xr, station.yr);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestStation = station.station;
+                }
+            });
+            
+            return {
+                station: nearestStation,
+                distance: minDistance
+            };
+        }
+
+        function getPositionOnLine(lat, lon, line) {
+            const lineStations = allLines[line];
+            if (!lineStations || lineStations.length === 0) return 0;
+            
+            // Finde die zwei nächsten Stationen
+            let closest1 = { index: 0, distance: Infinity };
+            let closest2 = { index: 0, distance: Infinity };
+            
+            for (let i = 0; i < lineStations.length; i++) {
+                const station = lineStations[i];
+                const distance = getDistance(lat, lon, station.xr, station.yr);
+                
+                if (distance < closest1.distance) {
+                    closest2 = { ...closest1 };
+                    closest1 = { index: i, distance };
+                } else if (distance < closest2.distance) {
+                    closest2 = { index: i, distance };
+                }
+            }
+            
+            // Sortiere die Indizes
+            const [startIdx, endIdx] = closest1.index < closest2.index ? 
+                [closest1.index, closest2.index] : [closest2.index, closest1.index];
+            
+            // Berechne die Gesamtstrecke zwischen den Stationen
+            const totalDistance = getDistance(
+                lineStations[startIdx].xr, lineStations[startIdx].yr,
+                lineStations[endIdx].xr, lineStations[endIdx].yr
+            );
+            
+            // Berechne die Position zwischen den Stationen
+            const distanceFromStart = getDistance(
+                lat, lon,
+                lineStations[startIdx].xr, lineStations[startIdx].yr
+            );
+            
+            const positionBetween = distanceFromStart / totalDistance;
+            
+            // Berechne die Gesamtposition auf der Linie
+            const totalStations = lineStations.length;
+            const segmentLength = 1 / (totalStations - 1);
+            const position = (startIdx * segmentLength) + (positionBetween * segmentLength);
+            
+            return Math.min(1, Math.max(0, position));
+        }
+
+        function updateLastUpdateTime() {
+            const now = new Date();
+            document.getElementById('last-update').textContent = 
+                now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function toggleLine(lineElement, line) {
+            const content = lineElement.querySelector('.line-content');
+            const toggleIcon = lineElement.querySelector('.toggle-icon');
+            
+            if (content.classList.contains('collapsed')) {
+                // Ausklappen
+                content.classList.remove('collapsed');
+                toggleIcon.classList.remove('collapsed');
+                expandedLines.add(line);
+                
+                // Setze die max-height basierend auf dem tatsächlichen Inhalt
+                content.style.maxHeight = content.scrollHeight + 'px';
+            } else {
+                // Einklappen
+                content.classList.add('collapsed');
+                toggleIcon.classList.add('collapsed');
+                expandedLines.delete(line);
+            }
+        }
+
+        // Funktionen zum Aus- und Einklappen aller Linien
+        function expandAllLines() {
+            document.querySelectorAll('.line-container').forEach(lineElement => {
+                const line = lineElement.getAttribute('data-line');
+                const content = lineElement.querySelector('.line-content');
+                const toggleIcon = lineElement.querySelector('.toggle-icon');
+                
+                content.classList.remove('collapsed');
+                toggleIcon.classList.remove('collapsed');
+                expandedLines.add(line);
+                
+                // Setze die max-height basierend auf dem tatsächlichen Inhalt
+                content.style.maxHeight = content.scrollHeight + 'px';
+            });
+
+            // Auch den anderen Fahrzeuge-Bereich ausklappen
+            const otherContent = document.querySelector('.other-vehicles-content');
+            const otherToggleIcon = document.querySelector('.other-vehicles-header .toggle-icon');
+            otherContent.classList.remove('collapsed');
+            otherToggleIcon.classList.remove('collapsed');
+            otherContent.style.maxHeight = otherContent.scrollHeight + 'px';
+        }
+
+        function collapseAllLines() {
+            document.querySelectorAll('.line-container').forEach(lineElement => {
+                const line = lineElement.getAttribute('data-line');
+                const content = lineElement.querySelector('.line-content');
+                const toggleIcon = lineElement.querySelector('.toggle-icon');
+                
+                content.classList.add('collapsed');
+                toggleIcon.classList.add('collapsed');
+                expandedLines.delete(line);
+            });
+
+            // Auch den anderen Fahrzeuge-Bereich einklappen
+            const otherContent = document.querySelector('.other-vehicles-content');
+            const otherToggleIcon = document.querySelector('.other-vehicles-header .toggle-icon');
+            otherContent.classList.add('collapsed');
+            otherToggleIcon.classList.add('collapsed');
+        }
+
+        function showTooltip(vehicle, element) {
+            const rect = element.getBoundingClientRect();
+            const nearestStation = findNearestStation(
+                vehicle.location.latitude, 
+                vehicle.location.longitude, 
+                vehicle.line.name
+            );
+            
+            const tooltipContent = `
+                <h3>U-Bahn ${vehicle.line.name}</h3>
+                <p><span class="tooltip-label">Fahrtrichtung:</span> ${vehicle.direction || 'unbekannt'}</p>
+                <p><span class="tooltip-label">Nächste Station:</span> ${nearestStation.station} (${Math.round(nearestStation.distance)} m)</p>
+                <p><span class="tooltip-label">Geschwindigkeit:</span> ${vehicle.speed ? Math.round(vehicle.speed * 3.6) + ' km/h' : 'unbekannt'}</p>
+                <p><span class="tooltip-label">Letzte Aktualisierung:</span> ${new Date(vehicle.lastUpdated).toLocaleTimeString()}</p>
+                <p><span class="tooltip-label">Zug-ID:</span> ${vehicle.tripId || 'unbekannt'}</p>
+            `;
+            
+            tooltip.innerHTML = tooltipContent;
+            tooltip.style.display = 'block';
+            
+            // Bessere Positionierung des Tooltips
+            const tooltipWidth = 250; // Geschätzte Breite des Tooltips
+            const tooltipHeight = 180; // Geschätzte Höhe des Tooltips
+            
+            // Position rechts neben dem Marker, falls Platz, sonst links
+            let left = rect.left + rect.width + 10;
+            if (left + tooltipWidth > window.innerWidth) {
+                left = rect.left - tooltipWidth - 10;
+            }
+            
+            // Position unterhalb des Markers, falls Platz, sonst oberhalb
+            let top = rect.top;
+            if (top + tooltipHeight > window.innerHeight) {
+                top = rect.top - tooltipHeight;
+            }
+            
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+            tooltip.style.zIndex = '1000'; // Sicherstellen, dass es über allem anderen liegt
+        }
+
+        function hideTooltip() {
+            tooltip.style.display = 'none';
+        }
+
+        async function fetchLiveVehicles() {
+                try {
+                    // Standard-Berlin-Bereich als Fallback
+                    const north = 52.6755;
+                    const west = 13.0883;
+                    const south = 52.3383;
+                    const east = 13.7611;
+
+                    const response = await fetch(`https://v6.vbb.transport.rest/radar?north=${north}&west=${west}&south=${south}&east=${east}&results=1000`);
+                    const data = await response.json();
+
+                    if (data && data.movements) {
+                        const linesContainer = document.getElementById('lines-container');
+                        const otherVehiclesList = document.getElementById('other-vehicles-list');
+                        
+                        // Fahrzeuge nach Linie gruppieren
+                        const vehiclesByLine = {};
+                        const otherVehicles = [];
+                        
+                        data.movements.forEach(vehicle => {
+                            if (vehicle.location) {
+                                const markerType = getMarkerType(vehicle);
+                                const line = vehicle.line?.name;
+                                
+                                if (markerType === 'U-Bahn' && line && allLines[line]) {
+                                    if (!vehiclesByLine[line]) {
+                                        vehiclesByLine[line] = [];
+                                    }
+                                    vehiclesByLine[line].push(vehicle);
+                                } else {
+                                    otherVehicles.push(vehicle);
+                                }
+                            }
+                        });
+
+                        // Container leeren
+                        linesContainer.innerHTML = '';
+
+                        // Für jede Linie ein Element erstellen
+                        Object.keys(allLines).forEach(line => {
+                            if (allLines[line].length === 0) return;
+                            
+                            // Linien-Element erstellen
+                            const lineElement = document.createElement('div');
+                            lineElement.className = `line-container`;
+                            lineElement.setAttribute('data-line', line);
+                            
+                            const lineHeader = document.createElement('div');
+                            lineHeader.className = 'line-header';
+                            lineHeader.onclick = () => toggleLine(lineElement, line);
+                            
+                            lineHeader.innerHTML = `
+                                <span class="line-title">U-Bahn ${line}</span>
+                                <span class="toggle-icon">▼</span>
+                            `;
+                            
+                            const lineContent = document.createElement('div');
+                            lineContent.className = `line-content`;
+                            
+                            // Perlenschnur Visualisierung
+                            const lineVisualizationContainer = document.createElement('div');
+                            lineVisualizationContainer.className = 'line-visualization-container';
+                            
+                            const verticalLineTrack = document.createElement('div');
+                            verticalLineTrack.className = `vertical-line-track ${line}-color`;
+                            
+                            const lineTrack = document.createElement('div');
+                            lineTrack.className = 'line-track';
+                            
+                            verticalLineTrack.appendChild(lineTrack);
+                            
+                            // Stationen und Label hinzufügen (nur Hauptstationen)
+                            const stationsContainer = document.createElement('div');
+                            stationsContainer.className = 'stations-container';
+                            
+                            allLines[line].forEach((station, index) => {
+                                const position = (index / (allLines[line].length - 1)) * 100;
+                                
+                                const stationItem = document.createElement('div');
+                                stationItem.className = 'station-item';
+                                
+                                // WENN STATION GESPERRT
+                                if (station.zu === true || station.zu === "true") {
+                                    stationItem.classList.add('closed');
+                                }
+
+                                const stationMarker = document.createElement('div');
+                                stationMarker.className = 'station-marker';
+                                stationMarker.style.top = `${position}%`;
+                                verticalLineTrack.appendChild(stationMarker);
+                                
+                                const stationLabel = document.createElement('div');
+                                stationLabel.className = 'station-label';
+                                stationLabel.textContent = station.station;
+                                
+                                stationItem.appendChild(stationMarker.cloneNode(true));
+                                stationItem.appendChild(stationLabel);
+                                stationsContainer.appendChild(stationItem);
+                            });
+                            
+                            lineVisualizationContainer.appendChild(verticalLineTrack);
+                            lineVisualizationContainer.appendChild(stationsContainer);
+                            
+                            // Fahrzeuge hinzufügen
+                            const vehicles = vehiclesByLine[line] || [];
+                            vehicles.forEach((vehicle, i) => {
+                                const position = getPositionOnLine(
+                                    vehicle.location.latitude, 
+                                    vehicle.location.longitude, 
+                                    line
+                                ) * 100;
+                                
+                                const trainMarker = document.createElement('div');
+                                trainMarker.className = 'train-marker';
+                                trainMarker.style.top = `${position}%`;
+                                trainMarker.dataset.vehicleId = i;
+                                
+                                // Hover-Events für Tooltip
+                                trainMarker.addEventListener('mouseenter', () => showTooltip(vehicle, trainMarker));
+                                trainMarker.addEventListener('mouseleave', hideTooltip);
+                                
+                                verticalLineTrack.appendChild(trainMarker);
+                            });
+                            
+                            lineContent.appendChild(lineVisualizationContainer);
+                            
+                            // Fahrzeugliste hinzufügen
+                            if (vehicles.length > 0) {
+                                const vehicleList = document.createElement('ul');
+                                vehicleList.className = 'vehicle-list';
+                                
+                                vehicles.forEach(vehicle => {
+                                    const lat = vehicle.location.latitude;
+                                    const lon = vehicle.location.longitude;
+                                    const nearestStation = findNearestStation(lat, lon, line);
+
+                                    const listItem = document.createElement('li');
+                                    listItem.className = `line-${line}`;
+                                    
+                                    listItem.innerHTML = `
+                                        <span class="next-station">→ ${nearestStation.station} (${Math.round(nearestStation.distance)} m)</span>
+                                        <div class="vehicle-details">
+                                            Fahrtrichtung: ${vehicle.direction || 'unbekannt'}<br>
+                                            Letzte Aktualisierung: ${new Date(vehicle.lastUpdated).toLocaleTimeString()}
+                                        </div>
+                                    `;
+                                    
+                                    // Hover-Events für Tooltip auch in der Liste
+                                    listItem.addEventListener('mouseenter', () => {
+                                        const marker = verticalLineTrack.querySelector(`.train-marker[data-vehicle-id="${vehicles.indexOf(vehicle)}"]`);
+                                        if (marker) showTooltip(vehicle, marker);
+                                    });
+                                    listItem.addEventListener('mouseleave', hideTooltip);
+                                    
+                                    vehicleList.appendChild(listItem);
+                                });
+                                
+                                lineContent.appendChild(vehicleList);
+                            } else {
+                                const noVehicles = document.createElement('p');
+                                noVehicles.textContent = 'Keine Fahrzeuge unterwegs';
+                                noVehicles.style.textAlign = 'center';
+                                noVehicles.style.color = '#777';
+                                lineContent.appendChild(noVehicles);
+                            }
+                            
+                            lineElement.appendChild(lineHeader);
+                            lineElement.appendChild(lineContent);
+                            linesContainer.appendChild(lineElement);
+                            
+                            // Standardmäßig eingeklappt
+                            if (!expandedLines.has(line)) {
+                                lineContent.classList.add('collapsed');
+                                lineHeader.querySelector('.toggle-icon').classList.add('collapsed');
+                            } else {
+                                // Wenn bereits ausgeklappt, max-height setzen
+                                lineContent.style.maxHeight = lineContent.scrollHeight + 'px';
+                            }
+                        });
+
+                        // Andere Fahrzeuge anzeigen
+                        otherVehiclesList.innerHTML = '';
+                        
+                        if (otherVehicles.length > 0) {
+                            otherVehicles.forEach(vehicle => {
+                                const vehicleElement = document.createElement('div');
+                                vehicleElement.className = 'other-vehicle';
+                                
+                                let vehicleType = getMarkerType(vehicle);
+                                if (vehicle.line?.name) {
+                                    vehicleType += ` ${vehicle.line.name}`;
+                                }
+                                
+                                vehicleElement.innerHTML = `
+                                    <div class="other-vehicle-type">${vehicleType}</div>
+                                    <div class="other-vehicle-details">
+                                        ${vehicle.direction ? `<div>Fahrtrichtung: ${vehicle.direction}</div>` : ''}
+                                        <div>Position: ${vehicle.location.latitude.toFixed(5)}, ${vehicle.location.longitude.toFixed(5)}</div>
+                                        <div>Letzte Aktualisierung: ${new Date(vehicle.lastUpdated).toLocaleTimeString()}</div>
+                                    </div>
+                                `;
+                                
+                                otherVehiclesList.appendChild(vehicleElement);
+                            });
+                        } else {
+                            otherVehiclesList.innerHTML = '<p>Keine anderen Fahrzeuge gefunden</p>';
+                        }
+
+                        updateLastUpdateTime();
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Abrufen der Live-Fahrzeuge:', error);
+                    document.getElementById('lines-container').innerHTML = 
+                        '<div class="line-container"><div class="line-header">Fehler beim Laden der Daten</div></div>';
+                }
+            }
+            try {
+                // Standard-Berlin-Bereich als Fallback
+                const north = 52.6755;
+                const west = 13.0883;
+                const south = 52.3383;
+                const east = 13.7611;
+
+                const response = await fetch(`https://v6.vbb.transport.rest/radar?north=52.5994968&west=13.1926072&south=52.4122984&east=13.6351573&results=1000`);
+                const data = await response.json();
+
+                if (data && data.movements) {
+                    const linesContainer = document.getElementById('lines-container');
+                    const otherVehiclesList = document.getElementById('other-vehicles-list');
+                    
+                    // Fahrzeuge nach Linie gruppieren
+                    const vehiclesByLine = {};
+                    const otherVehicles = [];
+                    
+                    data.movements.forEach(vehicle => {
+                        if (vehicle.location) {
+                            const markerType = getMarkerType(vehicle);
+                            const line = vehicle.line?.name;
+                            
+                            if (markerType === 'U-Bahn' && line && allLines[line]) {
+                                if (!vehiclesByLine[line]) {
+                                    vehiclesByLine[line] = [];
+                                }
+                                vehiclesByLine[line].push(vehicle);
+                            } else {
+                                otherVehicles.push(vehicle);
+                            }
+                        }
+                    });
+
+                    // Linienabschnitte erstellen oder aktualisieren
+                    allLines[line].forEach((station, index) => {
+                        const position = (index / (allLines[line].length - 1)) * 100;
+
+                        const stationItem = document.createElement('div');
+                        stationItem.className = 'station-item';
+
+                        // ✅ WENN STATION GESPERRT
+                        if (station.zu === true || station.zu === "true") {
+                            stationItem.classList.add('closed');
+                        }
+
+                        const stationMarker = document.createElement('div');
+                        stationMarker.className = 'station-marker';
+                        stationMarker.style.top = `${position}%`;
+
+                        const stationLabel = document.createElement('div');
+                        stationLabel.className = 'station-label';
+                        stationLabel.textContent = station.station;
+
+                        stationItem.appendChild(stationMarker);
+                        stationItem.appendChild(stationLabel);
+
+                        stationsContainer.appendChild(stationItem);
+
+                        if (allLines[line].length === 0) return;
+                        
+                        let lineElement = document.querySelector(`.line-container[data-line="${line}"]`);
+                        
+                        if (!lineElement) {
+                            // Neues Linien-Element erstellen
+                            lineElement = document.createElement('div');
+                            lineElement.className = `line-container`;
+                            lineElement.setAttribute('data-line', line);
+                            
+                            const lineHeader = document.createElement('div');
+                            lineHeader.className = 'line-header';
+                            lineHeader.onclick = () => toggleLine(lineElement, line);
+                            
+                            lineHeader.innerHTML = `
+                                <span class="line-title">U-Bahn ${line}</span>
+                                <span class="toggle-icon">▼</span>
+                            `;
+                            
+                            const lineContent = document.createElement('div');
+                            lineContent.className = `line-content`;
+                            
+                            // Perlenschnur Visualisierung
+                            const lineVisualizationContainer = document.createElement('div');
+                            lineVisualizationContainer.className = 'line-visualization-container';
+                            
+                            const verticalLineTrack = document.createElement('div');
+                            verticalLineTrack.className = `vertical-line-track ${line}-color`;
+                            
+                            const lineTrack = document.createElement('div');
+                            lineTrack.className = 'line-track';
+                            
+                            verticalLineTrack.appendChild(lineTrack);
+                            
+                            // Stationen und Label hinzufügen (nur Hauptstationen)
+                            const stationsContainer = document.createElement('div');
+                            stationsContainer.className = 'stations-container';
+                            
+                            allLines[line].forEach((station, index) => {
+                                const position = (index / (allLines[line].length - 1)) * 100;
+                                
+                                const stationItem = document.createElement('div');
+                                stationItem.className = 'station-item';
+                                
+                                const stationMarker = document.createElement('div');
+                                stationMarker.className = 'station-marker';
+                                stationMarker.style.top = `${position}%`;
+                                verticalLineTrack.appendChild(stationMarker);
+                                
+                                const stationLabel = document.createElement('div');
+                                stationLabel.className = 'station-label';
+                                stationLabel.textContent = station.station;
+                                
+                                stationItem.appendChild(verticalLineTrack.cloneNode(true));
+                                stationItem.appendChild(stationLabel);
+                                stationsContainer.appendChild(stationItem);
+                            });
+                            
+                            lineVisualizationContainer.appendChild(verticalLineTrack);
+                            lineVisualizationContainer.appendChild(stationsContainer);
+                            
+                            // Fahrzeuge hinzufügen
+                            const vehicles = vehiclesByLine[line] || [];
+                            vehicles.forEach((vehicle, i) => {
+                                const position = getPositionOnLine(
+                                    vehicle.location.latitude, 
+                                    vehicle.location.longitude, 
+                                    line
+                                ) * 100;
+                                
+                                const trainMarker = document.createElement('div');
+                                trainMarker.className = 'train-marker';
+                                trainMarker.style.top = `${position}%`;
+                                trainMarker.dataset.vehicleId = i;
+                                
+                                // Hover-Events für Tooltip
+                                trainMarker.addEventListener('mouseenter', () => showTooltip(vehicle, trainMarker));
+                                trainMarker.addEventListener('mouseleave', hideTooltip);
+                                
+                                verticalLineTrack.appendChild(trainMarker);
+                            });
+                            
+                            lineContent.appendChild(lineVisualizationContainer);
+                            
+                            // Fahrzeugliste hinzufügen
+                            if (vehicles.length > 0) {
+                                const vehicleList = document.createElement('ul');
+                                vehicleList.className = 'vehicle-list';
+                                
+                                vehicles.forEach(vehicle => {
+                                    const lat = vehicle.location.latitude;
+                                    const lon = vehicle.location.longitude;
+                                    const nearestStation = findNearestStation(lat, lon, line);
+
+                                    const listItem = document.createElement('li');
+                                    listItem.className = `line-${line}`;
+                                    
+                                   
+                                    
+                                 
+                                });
+                                
+                                lineContent.appendChild(vehicleList);
+                            } else {
+                                const noVehicles = document.createElement('p');
+                                noVehicles.textContent = 'Keine Fahrzeuge unterwegs';
+                                noVehicles.style.textAlign = 'center';
+                                noVehicles.style.color = '#777';
+                                lineContent.appendChild(noVehicles);
+                            }
+                            
+                            lineElement.appendChild(lineHeader);
+                            lineElement.appendChild(lineContent);
+                            linesContainer.appendChild(lineElement);
+                            
+                            // Standardmäßig eingeklappt
+                            toggleLine(lineElement, line);
+                        } else {
+                            // Bestehendes Element aktualisieren
+                            const verticalLineTrack = lineElement.querySelector('.vertical-line-track');
+                            
+                            // Alte Zug-Marker entfernen
+                            const oldMarkers = verticalLineTrack.querySelectorAll('.train-marker');
+                            oldMarkers.forEach(marker => marker.remove());
+                            
+                            // Neue Zug-Marker hinzufügen
+                            const vehicles = vehiclesByLine[line] || [];
+                            vehicles.forEach((vehicle, i) => {
+                                const position = getPositionOnLine(
+                                    vehicle.location.latitude, 
+                                    vehicle.location.longitude, 
+                                    line
+                                ) * 100;
+                                
+                                const trainMarker = document.createElement('div');
+                                trainMarker.className = 'train-marker';
+                                trainMarker.style.top = `${position}%`;
+                                trainMarker.dataset.vehicleId = i;
+                                
+                                // Hover-Events für Tooltip
+                                trainMarker.addEventListener('mouseenter', () => showTooltip(vehicle, trainMarker));
+                                trainMarker.addEventListener('mouseleave', hideTooltip);
+                                
+                                verticalLineTrack.appendChild(trainMarker);
+                            });
+                            
+                            // Fahrzeugliste aktualisieren
+                            const vehicleList = lineElement.querySelector('.vehicle-list');
+                            if (vehicleList) {
+                                vehicleList.innerHTML = '';
+                                
+                                vehicles.forEach(vehicle => {
+                                    const lat = vehicle.location.latitude;
+                                    const lon = vehicle.location.longitude;
+                                    const nearestStation = findNearestStation(lat, lon, line);
+
+                                    const listItem = document.createElement('li');
+                                    listItem.className = `line-${line}`;
+                                    
+                                    listItem.innerHTML = `
+                                        <span class="next-station">→ ${nearestStation.station} (${Math.round(nearestStation.distance)} m)</span>
+                                        <div class="vehicle-details">
+                                            Fahrtrichtung: ${vehicle.direction || 'unbekannt'}<br>
+                                            Letzte Aktualisierung: ${new Date(vehicle.lastUpdated).toLocaleTimeString()}
+                                        </div>
+                                    `;
+                                    
+                                    // Hover-Events für Tooltip auch in der Liste
+                                    listItem.addEventListener('mouseenter', () => {
+                                        const marker = verticalLineTrack.querySelector(`.train-marker[data-vehicle-id="${vehicles.indexOf(vehicle)}"]`);
+                                        if (marker) showTooltip(vehicle, marker);
+                                    });
+                                    listItem.addEventListener('mouseleave', hideTooltip);
+                                    
+                                    vehicleList.appendChild(listItem);
+                                });
+                                
+                                if (vehicles.length === 0) {
+                                    const noVehicles = document.createElement('p');
+                                    noVehicles.textContent = 'Keine Fahrzeuge unterwegs';
+                                    noVehicles.style.textAlign = 'center';
+                                    noVehicles.style.color = '#777';
+                                    vehicleList.appendChild(noVehicles);
+                                }
+                            }
+                            
+                            // Aktualisiere die Höhe wenn ausgeklappt
+                            const content = lineElement.querySelector('.line-content');
+                            if (!content.classList.contains('collapsed')) {
+                                content.style.maxHeight = content.scrollHeight + 'px';
+                            }
+                        }
+                    });
+
+                    // Andere Fahrzeuge anzeigen
+                    otherVehiclesList.innerHTML = '';
+                    
+                    if (otherVehicles.length > 0) {
+                        otherVehicles.forEach(vehicle => {
+                            const vehicleElement = document.createElement('div');
+                            vehicleElement.className = 'other-vehicle';
+                            
+                            let vehicleType = getMarkerType(vehicle);
+                            if (vehicle.line?.name) {
+                                vehicleType += ` ${vehicle.line.name}`;
+                            }
+                            
+                            vehicleElement.innerHTML = `
+                                <div class="other-vehicle-type">${vehicleType}</div>
+                                <div class="other-vehicle-details">
+                                    ${vehicle.direction ? `<div>Fahrtrichtung: ${vehicle.direction}</div>` : ''}
+                                    <div>Position: ${vehicle.location.latitude.toFixed(5)}, ${vehicle.location.longitude.toFixed(5)}</div>
+                                    <div>Letzte Aktualisierung: ${new Date(vehicle.lastUpdated).toLocaleTimeString()}</div>
+                                </div>
+                            `;
+                            
+                            otherVehiclesList.appendChild(vehicleElement);
+                        });
+                    } else {
+                        otherVehiclesList.innerHTML = '<p>Keine anderen Fahrzeuge gefunden</p>';
+                    }
+
+                    updateLastUpdateTime();
+                }
+            } catch (error) {
+                console.error('Fehler beim Abrufen der Live-Fahrzeuge:', error);
+                document.getElementById('lines-container').innerHTML = 
+                    '<div class="line-container"><div class="line-header">Fehler beim Laden der Daten</div></div>';
+            }
+        
+
+        // Initialisierung
+        function init() {
+            // Event Listener für die Control Buttons
+            document.getElementById('expand-all').addEventListener('click', expandAllLines);
+            document.getElementById('collapse-all').addEventListener('click', collapseAllLines);
+            
+            // Event-Listener für andere Fahrzeuge
+            const otherHeader = document.querySelector('.other-vehicles-header');
+            otherHeader.addEventListener('click', () => {
+                const content = document.querySelector('.other-vehicles-content');
+                const toggleIcon = otherHeader.querySelector('.toggle-icon');
+                
+                if (content.classList.contains('collapsed')) {
+                    content.classList.remove('collapsed');
+                    toggleIcon.classList.remove('collapsed');
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                } else {
+                    content.classList.add('collapsed');
+                    toggleIcon.classList.add('collapsed');
+                }
+            });
+            
+            fetchLiveVehicles();
+            // Alle 15 Sekunden aktualisieren
+            setInterval(fetchLiveVehicles, 5000);
+        }
+
+        // Starten der Anwendung
+        init();
+    </script>
+</body>
+</html>
