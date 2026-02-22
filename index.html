@@ -51,6 +51,41 @@
          
         </section>
         <br />
+        <section id="Kontakt" class="contact-section">
+            <h2>Kontakt</h2>
+            <p>Du hast eine Frage oder möchtest einfach Hallo sagen? Schreib mir gerne!</p>
+
+            <!-- 
+                WICHTIG: Ersetze "YOUR_FORM_ID" mit deiner eigenen Formspree-ID.
+                Gehe auf https://formspree.io, erstelle ein kostenloses Konto,
+                füge kontakt@vinicent.de als Ziel-E-Mail ein und kopiere deine Form-ID hierher.
+                Die ID sieht so aus: https://formspree.io/f/xyzabcde → ID = xyzabcde
+            -->
+            <form class="contact-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" placeholder="Dein Name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">E-Mail</label>
+                    <input type="email" id="email" name="email" placeholder="deine@email.de" required>
+                </div>
+                <div class="form-group">
+                    <label for="betreff">Betreff</label>
+                    <input type="text" id="betreff" name="betreff" placeholder="Worum geht es?">
+                </div>
+                <div class="form-group">
+                    <label for="nachricht">Nachricht</label>
+                    <textarea id="nachricht" name="nachricht" rows="5" placeholder="Deine Nachricht..." required></textarea>
+                </div>
+                <!-- Verstecktes Feld: Weiterleitung nach dem Absenden -->
+                <input type="hidden" name="_next" value="https://deine-website.de/?danke=1">
+                <button type="submit" class="contact-submit">Nachricht senden</button>
+            </form>
+        </section>
+
+        <br />
+        
     </main>
 
     <style>
