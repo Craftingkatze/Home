@@ -301,18 +301,18 @@ let routeStopMarkers = null;
 let tripStopoverCache = {};
 
 let currentMapMode = 'schematic';
-let visibleLines = {U1:true,U2:true,U3:true,U4:true,U5:true,U6:true,U7:true,U8:true,U9:true,U12:true};
+let visibleLines = {U1:true,U2:true,U3:true,U4:true,U5:true,U6:true,U7:true,U8:true,U9:true};
 
 const lineColors = {
     U1:'#7dad4c', U2:'#da421e', U3:'#16683d', U4:'#f0d722',
     U5:'#7e5330', U6:'#8c6dab', U7:'#009bd5', U8:'#224f86',
-    U9:'#f3791d', U12:'#1e05ff'
+    U9:'#f3791d'
 };
 
 const lineOffsets = {
     U1:{dx:8.8,dy:8.2}, U2:{dx:8.8,dy:8.2}, U3:{dx:8.8,dy:8.2}, U4:{dx:8.8,dy:8.2},
     U5:{dx:8.8,dy:8.2}, U6:{dx:8.8,dy:8.2}, U7:{dx:8.8,dy:8.2}, U8:{dx:37.5,dy:8.2},
-    U9:{dx:8.8,dy:8.2}, U12:{dx:8.8,dy:8.2}
+    U9:{dx:8.8,dy:8.2}
 };
 
 function getBgColor(v) {
@@ -563,7 +563,7 @@ document.getElementById('fullscreen-toggle').addEventListener('click', () => {
     else document.exitFullscreen();
 });
 
-d3.xml("bvggrafik1a.svg").then(function(xml) {
+d3.xml("bvggrafik1c.svg").then(function(xml) {
     const container=document.getElementById("svg-container"), zoomCtrl=document.getElementById("zoom-controls");
     container.insertBefore(xml.documentElement, zoomCtrl);
     svg=d3.select("svg");
