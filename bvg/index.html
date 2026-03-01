@@ -44,7 +44,18 @@
         /* Vollbild */
         #svg-container:fullscreen,
         #svg-container:-webkit-full-screen,
-        #svg-container:-moz-full-screen { background-color: white; }
+        #svg-container:-moz-full-screen {
+            background-color: white;
+            width: 100vw !important;
+            height: 100vh !important;
+            overflow: hidden;
+        }
+        #svg-container:fullscreen svg,
+        #svg-container:-webkit-full-screen svg,
+        #svg-container:-moz-full-screen svg {
+            width: 100% !important;
+            height: 100% !important;
+        }
         ::backdrop { background-color: white; }
 
         /* Zoom Buttons */
@@ -52,7 +63,12 @@
             position: fixed; bottom: 20px; right: 20px;
             display: flex; flex-direction: column; gap: 6px; z-index: 999;
         }
-        #svg-container:fullscreen #zoom-controls { position: absolute; }
+        #svg-container:fullscreen #zoom-controls,
+        #svg-container:-webkit-full-screen #zoom-controls,
+        #svg-container:-moz-full-screen #zoom-controls {
+            position: absolute;
+            bottom: 20px; right: 20px;
+        }
         .zoom-btn {
             width: 38px; height: 38px; font-size: 22px;
             background: #2c3e50; color: white; border: none;
@@ -153,24 +169,26 @@
 <!-- Echte Karte -->
 <div id="leaflet-container">
     <div id="leaflet-map"></div>
-
-    <!-- SVG-Overlay: alle U-Bahn-Züge als ein einziges SVG-Element -->
-    <svg id="leaflet-svg-overlay" xmlns="http://www.w3.org/2000/svg">
-        <g id="trains-layer"></g>
-    </svg>
-
     <div id="leaflet-legend">
-        <h4>U-Bahn Linien</h4>
-        <div class="legend-item"><div class="legend-dot" style="background:#7dad4c"></div> U1</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#da421e"></div> U2</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#16683d"></div> U3</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f0d722"></div> U4</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#7e5330"></div> U5</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#8c6dab"></div> U6</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#009bd5"></div> U7</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#224f86"></div> U8</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f3791d"></div> U9</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#1e05ff"></div> U12</div>
+        <h4>Fahrzeugtypen</h4>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#95a5a6;border:3px solid #115D91"></div> U-Bahn
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#95a5a6;border:3px solid #008D4F"></div> S-Bahn
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#95a5a6;border:3px solid #95276E"></div> Bus
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#95a5a6;border:3px solid #BE1414"></div> Tram
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#95a5a6;border:3px solid #528DBA"></div> Fähre
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#95a5a6;border:3px solid #7f8c8d"></div> Sonstige
+        </div>
         <hr style="margin:6px 0;border-color:#ddd">
         <div class="legend-item">
             <button id="toggle-stations-btn" style="
@@ -198,11 +216,11 @@ let existingTrainIds = new Set();
 let currentMapMode = 'schematic';
 
 let leafletMap = null;
+let leafletMarkers = {}; // id -> { marker, line, productName }
 let stationLayers = {};
 let stationsVisible = true;
 let userMarker = null;
 
-// Cache für geladene SVG-Inhalte (damit wir nicht jedes Mal neu laden)
 const svgCache = {};
 
 const lineColors = {
@@ -211,35 +229,82 @@ const lineColors = {
     U9:'#f3791d', U12:'#1e05ff'
 };
 
-let visibleLines = {U1:true,U2:true,U3:true,U4:true,U5:true,U6:true,U7:true,U8:true,U9:true,U12:true};
-
-// ─── SVG laden & cachen ──────────────────────────────────────────────────────
-async function loadSvgContent(path) {
-    if (svgCache[path]) return svgCache[path];
-    try {
-        const res = await fetch(path);
-        const text = await res.text();
-        svgCache[path] = text;
-        return text;
-    } catch(e) {
-        console.error('SVG laden fehlgeschlagen:', path, e);
-        return null;
+function getTypeColor(productName) {
+    switch ((productName || '').toUpperCase()) {
+        case 'U':    return '#115D91';
+        case 'S':    return '#008D4F';
+        case 'BUS':  return '#95276E';
+        case 'TRAM': return '#BE1414';
+        case 'FERRY':return '#528DBA';
+        default:     return '#7f8c8d';
     }
 }
 
-// Wandelt SVG-Text in ein DOM-Element um und gibt es zurück
-function parseSvgString(svgText) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgText, 'image/svg+xml');
-    return doc.documentElement;
+function getMarkerColors(v) {
+    const productName = v.line?.productName || '';
+    const lineName    = v.line?.name || '';
+    const borderColor = getTypeColor(productName);
+    const apiBg = v.line?.color?.bg;
+    let fillColor = apiBg || lineColors[lineName] || '#95a5a6';
+    return { fillColor, borderColor };
 }
 
-// ─── Geo-Koordinaten → Leaflet-Pixel-Position ────────────────────────────────
-// Gibt {x, y} in Pixel relativ zum Leaflet-Container zurück
-function latLngToContainerPoint(lat, lng) {
-    if (!leafletMap) return {x:0, y:0};
-    const pt = leafletMap.latLngToContainerPoint(L.latLng(lat, lng));
-    return { x: pt.x, y: pt.y };
+function getProductLabel(productName) {
+    switch ((productName || '').toUpperCase()) {
+        case 'U':     return '🚇';
+        case 'S':     return '🚆';
+        case 'BUS':   return '🚌';
+        case 'TRAM':  return '🚊';
+        case 'FERRY': return '⛴';
+        default:      return '🚐';
+    }
+}
+
+let visibleLines = {U1:true,U2:true,U3:true,U4:true,U5:true,U6:true,U7:true,U8:true,U9:true,U12:true};
+
+// ── Alle Fahrzeuge auf der echten Karte via L.circleMarker anzeigen
+function updateLeafletTrains(movements) {
+    if (!leafletMap) return;
+    const seen = new Set();
+
+    movements.forEach(v => {
+        if (!v.location || !v.line || !v.line.name) return;
+        const line = v.line.name;
+        const productName = v.line?.productName || '';
+        const id = v.tripId;
+        if (!id) return;
+
+        if (productName === 'U' && !visibleLines[line]) return;
+
+        seen.add(id);
+        const lat = v.location.latitude;
+        const lng = v.location.longitude;
+        const dest = v.direction || '?';
+        const { fillColor, borderColor } = getMarkerColors(v);
+        const emoji = getProductLabel(productName);
+        const delay = v.delay ? ` | +${Math.round(v.delay/60)} min` : '';
+        const popupContent = `${emoji} <b>${line}</b><br>→ ${dest}${delay}`;
+
+        if (leafletMarkers[id]) {
+            leafletMarkers[id].marker.setLatLng([lat, lng]);
+            leafletMarkers[id].marker.setStyle({ fillColor, color: borderColor });
+            leafletMarkers[id].marker.getPopup()?.setContent(popupContent);
+        } else {
+            const radius = productName === 'U' ? 10 : (productName === 'S' ? 9 : 7);
+            const marker = L.circleMarker([lat, lng], {
+                radius, color: borderColor, fillColor, fillOpacity: 1, weight: 2.5
+            }).addTo(leafletMap).bindPopup(popupContent);
+            marker.on('click', () => marker.openPopup());
+            leafletMarkers[id] = { marker, line, productName };
+        }
+    });
+
+    Object.keys(leafletMarkers).forEach(id => {
+        if (!seen.has(id)) {
+            leafletMap.removeLayer(leafletMarkers[id].marker);
+            delete leafletMarkers[id];
+        }
+    });
 }
 
 // ═══════════════════════════════════════
@@ -259,10 +324,7 @@ function switchMode(mode) {
 
     if (mode === 'real') {
         initLeaflet();
-        setTimeout(() => {
-            leafletMap && leafletMap.invalidateSize();
-            repositionAllLeafletTrains();
-        }, 150);
+        setTimeout(() => leafletMap && leafletMap.invalidateSize(), 150);
     }
 }
 
@@ -306,9 +368,6 @@ function initLeaflet() {
         stationLayers[line] = group;
         if (stationsVisible) group.addTo(leafletMap);
     });
-
-    // Bei Karten-Bewegung/Zoom alle Zugpositionen neu berechnen
-    leafletMap.on('move zoom viewreset', repositionAllLeafletTrains);
 
     document.getElementById('locate-btn').addEventListener('click', () => {
         if (userMarker) leafletMap.setView(userMarker.getLatLng(), 15, {animate:true});
