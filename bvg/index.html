@@ -1132,7 +1132,7 @@ d3.xml("bvggrafik1a.svg").then(function(xml) {
                 delete liveTrains[id]; existingTrainIds.delete(id);
             });
             Object.keys(liveTrains).forEach(id => {
-                if (now - liveTrains[id].lastUpdated > 120000) {
+                if (now - liveTrains[id].lastUpdated > 60000) {
                     liveTrains[id]?.element?.remove();
                     delete liveTrains[id]; existingTrainIds.delete(id);
                 }
