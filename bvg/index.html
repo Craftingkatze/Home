@@ -97,7 +97,7 @@
         .zoom-btn:hover { background: #3d5166; }
 
         /* ── Echte Karte ────────────────────────────────── */
-        #leaflet-container { display: none; width: 100%; height: 85vh; position: relative; }
+        #leaflet-container { display: none; width: 100%; height: 85vh; position: relative; overflow: hidden; }
         #leaflet-map { width: 100%; height: 100%; }
 
         /* VBB-Livekarte-Style Pill-Labels */
@@ -139,12 +139,108 @@
 
         /* Locate Button */
         #locate-btn {
-            position: absolute; bottom: 30px; right: 10px; z-index: 1000;
+            position: absolute; bottom: 80px; right: 10px; z-index: 1000;
             background: #2c3e50; color: white; border: none; border-radius: 50%;
             width: 44px; height: 44px; font-size: 20px; cursor: pointer;
             box-shadow: 0 3px 8px rgba(0,0,0,0.5);
         }
         #locate-btn:hover { background: #3d5166; }
+
+        /* Stop-Tracking Button */
+        #stop-tracking-btn {
+            position: absolute; bottom: 30px; right: 10px; z-index: 1001;
+            background: #c0392b; color: white; border: none; border-radius: 6px;
+            padding: 8px 12px; font-size: 12px; cursor: pointer; display: none;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4); white-space: nowrap;
+        }
+        #stop-tracking-btn:hover { background: #a93226; }
+
+        /* ── Perlenschnur Panel ───────────────────────────── */
+        #stop-sequence-panel {
+            position: absolute; top: 0; right: 0; bottom: 0; z-index: 1000;
+            width: 260px; background: rgba(255,255,255,0.97);
+            border-left: 1px solid #ddd; overflow-y: auto;
+            transform: translateX(100%); transition: transform .3s ease;
+            display: flex; flex-direction: column;
+        }
+        #stop-sequence-panel.open { transform: translateX(0); }
+        body.dark-mode #stop-sequence-panel {
+            background: rgba(18,24,34,0.98); border-color: #333;
+        }
+
+        #ssp-header {
+            padding: 12px 14px 8px; border-bottom: 1px solid #eee;
+            display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+        }
+        body.dark-mode #ssp-header { border-color: #333; }
+
+        #ssp-line-badge {
+            padding: 3px 10px; border-radius: 10px; font-weight: 900;
+            font-size: 14px; letter-spacing: .04em;
+        }
+        #ssp-title { font-size: 12px; color: #555; flex: 1; }
+        body.dark-mode #ssp-title { color: #aaa; }
+        #ssp-close {
+            background: none; border: none; font-size: 18px; cursor: pointer;
+            color: #888; padding: 0 2px; line-height: 1;
+        }
+        #ssp-close:hover { color: #333; }
+
+        #ssp-stops { flex: 1; padding: 8px 0; overflow-y: auto; }
+
+        .ssp-stop {
+            display: flex; align-items: flex-start; gap: 0;
+            padding: 2px 14px 2px 0; position: relative; cursor: default;
+        }
+        .ssp-stop.is-next { background: rgba(243,121,29,0.07); }
+
+        /* Linie links */
+        .ssp-line-col {
+            width: 32px; flex-shrink: 0; display: flex;
+            flex-direction: column; align-items: center;
+        }
+        .ssp-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            border: 2px solid currentColor; background: white;
+            flex-shrink: 0; z-index: 1; position: relative;
+        }
+        .ssp-stop.passed .ssp-dot { background: currentColor; opacity: .5; }
+        .ssp-stop.is-next .ssp-dot { width: 13px; height: 13px; border-width: 2.5px; }
+        .ssp-stop.is-current .ssp-dot { background: currentColor; width: 13px; height: 13px; }
+        .ssp-vline {
+            width: 2px; flex: 1; min-height: 16px;
+        }
+        .ssp-stop:first-child .ssp-vline-top { display: none; }
+        .ssp-stop:last-child  .ssp-vline-bot { display: none; }
+
+        .ssp-info { flex: 1; padding: 3px 0 3px 4px; min-width: 0; }
+        .ssp-stop-name {
+            font-size: 12px; font-weight: 600; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+            color: #222;
+        }
+        body.dark-mode .ssp-stop-name { color: #ddd; }
+        .ssp-stop.passed .ssp-stop-name { color: #aaa; }
+        body.dark-mode .ssp-stop.passed .ssp-stop-name { color: #666; }
+        .ssp-stop.is-next .ssp-stop-name { color: #f3791d; font-weight: 800; }
+        .ssp-time {
+            font-size: 10px; color: #888; margin-top: 1px;
+        }
+        .ssp-delay-pos { color: #c0392b; font-weight: bold; }
+        .ssp-delay-neg { color: #27ae60; font-weight: bold; }
+
+        /* Fahrzeug-Tracking Indikator */
+        #tracking-badge {
+            position: absolute; top: 10px; right: 10px; z-index: 1002;
+            background: #c0392b; color: white; border-radius: 20px;
+            padding: 5px 12px; font-size: 12px; font-weight: bold;
+            display: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            animation: pulse-badge 2s infinite;
+        }
+        @keyframes pulse-badge {
+            0%,100% { box-shadow: 0 2px 8px rgba(192,57,43,0.4); }
+            50%      { box-shadow: 0 2px 16px rgba(192,57,43,0.8); }
+        }
 
         /* Tooltip */
         .stationinfo {
@@ -226,6 +322,18 @@
         </div>
     </div>
     <button id="locate-btn" title="Mein Standort">📍</button>
+    <button id="stop-tracking-btn">✕ Tracking beenden</button>
+    <div id="tracking-badge" title="Tracking aktiv – klicken zum Beenden">⊙ Tracking</div>
+
+    <!-- Perlenschnur-Panel -->
+    <div id="stop-sequence-panel">
+        <div id="ssp-header">
+            <span id="ssp-line-badge">–</span>
+            <span id="ssp-title">Stationsverlauf</span>
+            <button id="ssp-close">×</button>
+        </div>
+        <div id="ssp-stops"></div>
+    </div>
 </div>
 
 <div id="stationinfo" class="stationinfo" style="display:none;"></div>
@@ -250,6 +358,12 @@ let leafletMarkers = {};  // tripId → { marker, line, productName }
 let stationLayers  = {};
 let stationsVisible = true;
 let userMarker     = null;
+
+// Tracking & Route
+let trackedTripId     = null;
+let routePolyline     = null;
+let routeStopMarkers  = L.layerGroup ? null : null; // init after Leaflet loads
+let tripStopoverCache = {};  // tripId → stopovers array
 
 let currentMapMode = 'schematic';
 let visibleLines   = {U1:true,U2:true,U3:true,U4:true,U5:true,U6:true,U7:true,U8:true,U9:true,U12:true};
@@ -460,6 +574,10 @@ function updateLeafletTrains(movements) {
             leafletMarkers[id].marker.setLatLng([lat, lng]);
             // Update stored data for popup refresh
             leafletMarkers[id].delay = delayMin;
+            // Auto-pan wenn Tracking aktiv
+            if (trackedTripId === id && leafletMap) {
+                leafletMap.panTo([lat, lng], { animate: true, duration: 0.8 });
+            }
         } else {
             const divIcon = L.divIcon({
                 html: `<div class="vbb-marker" style="background:${bg};color:${fg}">${line}</div>`,
@@ -499,54 +617,48 @@ function updateLeafletTrains(movements) {
 }
 
 // ═══════════════════════════════════════════════════════
-// TRIP-DETAILS: Vorheriger / Nächster Halt
+// TRIP-DETAILS: Vorheriger / Nächster Halt + Tracking
 // ═══════════════════════════════════════════════════════
 async function fetchTripDetails(tripId, line, dest, bg, fg, delayMin) {
     const info = leafletMarkers[tripId];
     if (!info) return;
 
     try {
-        const url = `https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`;
-        const res = await fetch(url);
-        const data = await res.json();
-        const trip = data.trip || data;
-        const stopovers = trip.stopovers || trip.stopSequence || [];
+        let stopovers = tripStopoverCache[tripId];
+        if (!stopovers) {
+            const url = `https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const trip = data.trip || data;
+            stopovers = trip.stopovers || trip.stopSequence || [];
+            tripStopoverCache[tripId] = stopovers;
+        }
 
         const now = Date.now();
-        let prevStop = null, nextStop = null, foundCurrent = false;
+        let prevIdx = -1, nextIdx = -1;
 
         for (let i = 0; i < stopovers.length; i++) {
-            const s = stopovers[i];
-            const dep = s.departure ? new Date(s.departure).getTime() : null;
-            const arr = s.arrival   ? new Date(s.arrival).getTime()   : null;
-
-            if (!foundCurrent) {
-                if (dep && dep > now) {
-                    // This is next stop
-                    nextStop = { name: s.stop?.name || '?', time: s.departure, delay: s.departureDelay || 0 };
-                    if (i > 0) {
-                        const ps = stopovers[i-1];
-                        prevStop = { name: ps.stop?.name || '?', time: ps.departure || ps.arrival, delay: ps.departureDelay || ps.arrivalDelay || 0 };
-                    }
-                    foundCurrent = true;
-                    break;
-                }
-            }
+            const dep = stopovers[i].departure ? new Date(stopovers[i].departure).getTime() : null;
+            if (dep && dep > now) { nextIdx = i; prevIdx = i - 1; break; }
         }
+        if (nextIdx === -1) { prevIdx = stopovers.length - 2; nextIdx = stopovers.length - 1; }
 
         function fmtTime(iso, delay) {
             if (!iso) return '';
             const d = new Date(iso);
             const hh = d.getHours().toString().padStart(2,'0');
             const mm = d.getMinutes().toString().padStart(2,'0');
-            const dm = Math.round(delay / 60);
+            const dm = Math.round((delay||0) / 60);
             const dstr = dm >= 0 ? `+${dm}` : `${dm}`;
-            const col = dm > 0 ? '#c0392b' : '#27ae60';
+            const col  = dm > 0 ? '#c0392b' : '#27ae60';
             return `${hh}:${mm} <span style="color:${col};font-weight:bold">${dstr}</span>`;
         }
 
+        const prevStop = prevIdx >= 0 ? stopovers[prevIdx] : null;
+        const nextStop = nextIdx >= 0 ? stopovers[nextIdx] : null;
         const delayStr = delayMin > 0 ? `+${delayMin} Min` : delayMin < 0 ? `${delayMin} Min` : '+0';
-        const delayCol = delayMin > 0 ? '#c0392b' : '#27ae60';
+
+        const isTracking = trackedTripId === tripId;
 
         const html = `
             <div style="font-family:Arial,sans-serif;min-width:220px;font-size:13px;line-height:1.5">
@@ -556,38 +668,235 @@ async function fetchTripDetails(tripId, line, dest, bg, fg, delayMin) {
                     ${delayMin !== 0 ? `<span style="font-size:11px;opacity:.9">${delayStr}</span>` : ''}
                 </div>
                 ${dest ? `<div style="margin-bottom:8px;font-weight:bold;font-size:13px">→ ${dest}</div>` : ''}
+                <div style="display:flex;gap:6px;margin-bottom:8px">
+                    <button onclick="toggleTracking('${tripId}')" style="
+                        flex:1;padding:5px 8px;border:none;border-radius:5px;cursor:pointer;font-size:12px;
+                        background:${isTracking ? '#c0392b' : '#2c3e50'};color:white;font-weight:600">
+                        ${isTracking ? '✕ Tracking stoppen' : '⊙ Fahrzeug verfolgen'}
+                    </button>
+                    <button onclick="toggleRouteAndPanel('${tripId}','${line}','${bg}','${fg}')" style="
+                        flex:1;padding:5px 8px;border:none;border-radius:5px;cursor:pointer;font-size:12px;
+                        background:#27ae60;color:white;font-weight:600">
+                        ≡ Route & Halte
+                    </button>
+                </div>
                 <hr style="border:none;border-top:1px solid #ddd;margin:6px 0">
                 ${prevStop ? `
                     <div style="margin-bottom:6px">
                         <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em">Vorheriger Halt</div>
-                        <div style="font-weight:bold">${prevStop.name}</div>
-                        <div style="font-size:12px;color:#555">${fmtTime(prevStop.time, prevStop.delay)}</div>
+                        <div style="font-weight:bold">${prevStop.stop?.name || '?'}</div>
+                        <div style="font-size:12px;color:#555">${fmtTime(prevStop.departure||prevStop.arrival, prevStop.departureDelay||prevStop.arrivalDelay||0)}</div>
                     </div>` : ''}
                 ${nextStop ? `
                     <div>
                         <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em">Nächster Halt</div>
-                        <div style="font-weight:bold">${nextStop.name}</div>
-                        <div style="font-size:12px;color:#555">${fmtTime(nextStop.time, nextStop.delay)}</div>
-                    </div>` : `<div style="color:#888;font-size:12px">Keine weiteren Halte gefunden</div>`}
+                        <div style="font-weight:bold">${nextStop.stop?.name || '?'}</div>
+                        <div style="font-size:12px;color:#555">${fmtTime(nextStop.departure||nextStop.arrival, nextStop.departureDelay||nextStop.arrivalDelay||0)}</div>
+                    </div>` : `<div style="color:#888;font-size:12px">Endstation erreicht</div>`}
             </div>`;
 
-        if (info.marker.isPopupOpen()) {
-            info.marker.getPopup().setContent(html);
-        }
+        if (info.marker.isPopupOpen()) info.marker.getPopup().setContent(html);
+        if (trackedTripId === tripId) updateStopPanel(tripId, line, dest, bg, fg, stopovers, nextIdx);
+
     } catch(e) {
         console.warn('Trip-Details Fehler:', e);
-        if (info.marker.isPopupOpen()) {
-            const fallback = `
+        if (leafletMarkers[tripId]?.marker.isPopupOpen()) {
+            leafletMarkers[tripId].marker.getPopup().setContent(`
                 <div style="font-family:Arial,sans-serif;min-width:200px;font-size:13px">
-                    <div style="background:${bg};color:${fg};padding:5px 11px;border-radius:5px;
-                         font-weight:900;font-size:15px;margin-bottom:8px">${line}</div>
+                    <div style="background:${bg};color:${fg};padding:5px 11px;border-radius:5px;font-weight:900;font-size:15px;margin-bottom:8px">${line}</div>
                     ${dest ? `<div style="font-weight:bold">→ ${dest}</div>` : ''}
                     <div style="color:#888;font-size:11px;margin-top:6px">Details nicht verfügbar</div>
-                </div>`;
-            info.marker.getPopup().setContent(fallback);
+                </div>`);
         }
     }
 }
+
+// ═══════════════════════════════════════════════════════
+// TRACKING
+// ═══════════════════════════════════════════════════════
+function toggleTracking(tripId) {
+    if (trackedTripId === tripId) {
+        stopTracking();
+    } else {
+        startTracking(tripId);
+    }
+    // Refresh popup
+    const info = leafletMarkers[tripId];
+    if (info) {
+        info.marker.closePopup();
+        info.marker.openPopup();
+    }
+}
+
+function startTracking(tripId) {
+    trackedTripId = tripId;
+    const badge = document.getElementById('tracking-badge');
+    const stopBtn = document.getElementById('stop-tracking-btn');
+    const info = leafletMarkers[tripId];
+    badge.style.display = 'block';
+    badge.textContent   = `⊙ ${info?.line || ''} wird verfolgt`;
+    stopBtn.style.display = 'block';
+    // Center on vehicle
+    if (info?.marker && leafletMap) leafletMap.setView(info.marker.getLatLng(), 14, {animate:true});
+}
+
+function stopTracking() {
+    trackedTripId = null;
+    document.getElementById('tracking-badge').style.display = 'none';
+    document.getElementById('stop-tracking-btn').style.display = 'none';
+}
+
+document.getElementById('tracking-badge').addEventListener('click', stopTracking);
+document.getElementById('stop-tracking-btn').addEventListener('click', stopTracking);
+
+// ═══════════════════════════════════════════════════════
+// ROUTE ANZEIGEN + PERLENSCHNUR-PANEL
+// ═══════════════════════════════════════════════════════
+async function toggleRouteAndPanel(tripId, line, bg, fg) {
+    const panel = document.getElementById('stop-sequence-panel');
+    const isOpen = panel.classList.contains('open');
+
+    // If same trip already open → close
+    if (isOpen && panel.dataset.tripId === tripId) {
+        panel.classList.remove('open');
+        clearRoute();
+        return;
+    }
+
+    panel.dataset.tripId = tripId;
+    panel.classList.add('open');
+    document.getElementById('ssp-line-badge').textContent = line;
+    document.getElementById('ssp-line-badge').style.background = bg;
+    document.getElementById('ssp-line-badge').style.color = fg;
+    document.getElementById('ssp-stops').innerHTML = '<div style="padding:20px;color:#888;text-align:center;font-size:13px">Lade Stationen…</div>';
+
+    try {
+        let stopovers = tripStopoverCache[tripId];
+        if (!stopovers) {
+            const url = `https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const trip = data.trip || data;
+            stopovers = trip.stopovers || [];
+            tripStopoverCache[tripId] = stopovers;
+        }
+
+        const info = leafletMarkers[tripId];
+        const now = Date.now();
+        let nextIdx = stopovers.findIndex(s => {
+            const dep = s.departure ? new Date(s.departure).getTime() : null;
+            return dep && dep > now;
+        });
+        if (nextIdx === -1) nextIdx = stopovers.length - 1;
+
+        updateStopPanel(tripId, line, info?.dest || '', bg, fg, stopovers, nextIdx);
+        drawRoute(stopovers, bg, nextIdx);
+
+    } catch(e) {
+        document.getElementById('ssp-stops').innerHTML = '<div style="padding:20px;color:#c0392b;font-size:12px">Fehler beim Laden</div>';
+    }
+}
+
+function drawRoute(stopovers, color, nextIdx) {
+    clearRoute();
+    if (!leafletMap) return;
+
+    const coords = stopovers
+        .filter(s => s.stop?.location)
+        .map(s => [s.stop.location.latitude, s.stop.location.longitude]);
+
+    if (coords.length < 2) return;
+
+    // Route line
+    routePolyline = L.polyline(coords, {
+        color: color, weight: 4, opacity: 0.75,
+        dashArray: null
+    }).addTo(leafletMap);
+
+    // Fit map to route
+    leafletMap.fitBounds(routePolyline.getBounds(), { padding: [40, 40] });
+
+    // Small stop dots along route
+    if (!routeStopMarkers) routeStopMarkers = L.layerGroup().addTo(leafletMap);
+    else routeStopMarkers.addTo(leafletMap);
+
+    stopovers.forEach((s, i) => {
+        if (!s.stop?.location) return;
+        const isPast = i < nextIdx;
+        const isNext = i === nextIdx;
+        const r = isNext ? 6 : 4;
+        const fc = isPast ? '#aaa' : color;
+        L.circleMarker([s.stop.location.latitude, s.stop.location.longitude], {
+            radius: r, color, weight: 1.5,
+            fillColor: fc, fillOpacity: isPast ? 0.4 : 1
+        }).addTo(routeStopMarkers).bindTooltip(s.stop.name || '?', {
+            permanent: false, direction: 'top', offset: [0, -6]
+        });
+    });
+}
+
+function clearRoute() {
+    if (routePolyline) { leafletMap?.removeLayer(routePolyline); routePolyline = null; }
+    if (routeStopMarkers) { leafletMap?.removeLayer(routeStopMarkers); routeStopMarkers = null; }
+}
+
+function updateStopPanel(tripId, line, dest, bg, fg, stopovers, nextIdx) {
+    const panel = document.getElementById('stop-sequence-panel');
+    if (!panel.classList.contains('open')) return;
+    if (panel.dataset.tripId !== tripId) return;
+
+    document.getElementById('ssp-title').textContent = dest ? `→ ${dest}` : 'Stationsverlauf';
+
+    const container = document.getElementById('ssp-stops');
+    container.innerHTML = '';
+
+    stopovers.forEach((s, i) => {
+        const isPast    = i < nextIdx - 1;
+        const isCurrent = i === nextIdx - 1;
+        const isNext    = i === nextIdx;
+        const name = s.stop?.name || '?';
+
+        const dep = s.departure || s.arrival;
+        const delay = s.departureDelay || s.arrivalDelay || 0;
+        let timeStr = '';
+        if (dep) {
+            const d   = new Date(dep);
+            const hh  = d.getHours().toString().padStart(2,'0');
+            const mm  = d.getMinutes().toString().padStart(2,'0');
+            const dm  = Math.round(delay/60);
+            const cls = dm > 0 ? 'ssp-delay-pos' : 'ssp-delay-neg';
+            const ds  = dm !== 0 ? ` <span class="${cls}">${dm>0?'+':''}${dm}</span>` : '';
+            timeStr = `${hh}:${mm}${ds}`;
+        }
+
+        const cls = `ssp-stop${isPast?' passed':''}${isCurrent?' is-current':''}${isNext?' is-next':''}`;
+        const lineCol = bg;
+
+        const el = document.createElement('div');
+        el.className = cls;
+        el.style.cssText = 'display:flex;align-items:stretch;padding:1px 14px 1px 6px;';
+        el.innerHTML = `
+            <div class="ssp-line-col" style="color:${lineCol}">
+                <div class="ssp-vline ssp-vline-top" style="background:${isPast?'#ccc':lineCol};width:2px;min-height:8px"></div>
+                <div class="ssp-dot" style="color:${lineCol}"></div>
+                <div class="ssp-vline ssp-vline-bot" style="background:${lineCol};width:2px;min-height:8px;opacity:${isPast?'.3':'1'}"></div>
+            </div>
+            <div class="ssp-info">
+                <div class="ssp-stop-name">${name}</div>
+                ${timeStr ? `<div class="ssp-time">${timeStr}</div>` : ''}
+            </div>`;
+
+        container.appendChild(el);
+
+        // Auto-scroll to next stop
+        if (isNext) setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 100);
+    });
+}
+
+document.getElementById('ssp-close').addEventListener('click', () => {
+    document.getElementById('stop-sequence-panel').classList.remove('open');
+    clearRoute();
+});
 
 // ═══════════════════════════════════════════════════════
 // SCHEMATISCHE KARTE (D3 + Zoom)
