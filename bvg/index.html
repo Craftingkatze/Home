@@ -782,18 +782,17 @@ d3.xml("bvggrafik1a.svg").then(function(xml) {
                         c2.setAttribute("fill", col);
                         g.appendChild(c2);
 
-                        // Richtungspfeil:<polygon class="train-arrow" points="12,0 5.5,-3.5 5.5,3.5" fill="black" stroke="#000000" stroke-width="0.8" stroke-linejoin="round" transform="rotate(90)"></polygon>
+                        // Richtungspfeil:
                         // Dreieck-Spitze zeigt bei rotate(0°) nach rechts (+x-Richtung).
                         // getArrowAngle() dreht per atan2 auf die echte Streckengeometrie.
                         // Das Polygon ist so platziert dass seine Basis am Kreisrand (r=6) beginnt.
-                        const arrow = document.createElementNS(svgns, "polygon");
+                       const arrow = document.createElementNS(svgns, "polygon");
                         arrow.setAttribute("class", "train-arrow");
                         arrow.setAttribute("points", "12,0 5.5,-3.5 5.5,3.5");
                         arrow.setAttribute("fill", "black");
                         arrow.setAttribute("stroke", "#000000");
                         arrow.setAttribute("stroke-width", "0.8");
-                        arrow.setAttribute("stroke-linejoin", "round");
-                        arrow.setAttribute(`scale(1,-1) rotate(${angle})`);
+                        arrow.setAttribute("transform", `rotate(${angle})`);
                         g.appendChild(arrow);
 
                         zoomGroup.appendChild(g);
