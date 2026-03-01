@@ -105,7 +105,7 @@ const u1Points = [
               { x: 700.5, y: 607, xr: 52.499722, yr: 13.3577775, route: "U3", station: "Zwischen: Nollendorfplatz (unten)/Kurfürstenstraße" },
               { x: 757, y: 645, xr: 52.4975, yr: 13.363333, route: "U3", station: "Bülowstraße" },
               { x: 759.75, y: 607, xr: 52.4991665, yr: 13.368611, route: "U3", station: "Zwischen: Kurfürstenstraße/Gleisdreieck (U1)" },
-              { x: 789.5, y: 607, xr: 52.498333, yr: 13.375278, route: "U3, station: "Gleisdreieck (U1)" },
+              { x: 789.5, y: 607, xr: 52.498333, yr: 13.375278, route: "U3", station: "Gleisdreieck (U1)" },
               { x: 810.25, y: 607, xr: 52.49875, yr: 13.379167, route: "U3", station: "Zwischen: Gleisdreieck (U1)/Möckernbrücke" },
 
               { x: 834, y: 607, xr: 52.499167, yr: 13.383056, route: "U3", station: "Möckernbrücke" },
