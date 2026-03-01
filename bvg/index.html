@@ -9,8 +9,25 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; background: #f4f7f6; }
-        h1 { color: #2c3e50; margin: 12px 0 4px; font-size: 1.4em; }
+
+        /* ── Light/Dark Mode ─────────────────────────────── */
+        body {
+            font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0;
+            background: #f4f7f6; color: #2c3e50; transition: background .3s, color .3s;
+        }
+        body.dark-mode { background: #0f1117; color: #e0e0e0; }
+        body.dark-mode #svg-container { background: #1a1a2e; }
+        body.dark-mode #svg-container svg { border-color: #333; }
+        body.dark-mode .control-button { background: #3a4a5a; }
+        body.dark-mode .control-button:hover { background: #4a5a6a; }
+        body.dark-mode .control-button.active { background: #c0392b; }
+        body.dark-mode #map-mode-toggle { border-color: #4a5a6a; }
+        body.dark-mode #map-mode-toggle button { background: #1e2a3a; color: #ccc; }
+        body.dark-mode #map-mode-toggle button.active { background: #3a4a5a; color: white; }
+        body.dark-mode .refresh-info { color: #999; }
+        body.dark-mode #line-toggle-container label { color: #ccc; }
+
+        h1 { color: inherit; margin: 12px 0 4px; font-size: 1.4em; }
 
         .controls {
             margin: 6px 0; display: flex; flex-wrap: wrap;
@@ -85,38 +102,40 @@
 
         /* VBB-Livekarte-Style Pill-Labels */
         .vbb-marker {
-            display: inline-flex; align-items: center; gap: 3px;
-            padding: 2px 7px 2px 5px; border-radius: 12px;
-            font-size: 11px; font-weight: 800;
+            display: inline-flex; align-items: center;
+            padding: 2px 8px; border-radius: 12px;
+            font-size: 11px; font-weight: 900;
             white-space: nowrap; cursor: pointer;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+            box-shadow: 0 1px 5px rgba(0,0,0,0.35);
             border: 1.5px solid rgba(255,255,255,0.55);
             line-height: 1.4; user-select: none;
             transition: transform 0.12s, box-shadow 0.12s;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
         }
         .vbb-marker:hover {
             transform: scale(1.18);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.7);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
             z-index: 9999 !important;
         }
-        .vbb-marker .vm-icon { font-size: 9px; line-height:1; }
-        .vbb-marker .vm-name { font-size: 11px; font-weight: 900; }
 
         /* Leaflet Legende */
         #leaflet-legend {
             position: absolute; top: 10px; left: 10px; z-index: 1000;
-            background: rgba(22,28,38,0.93); border-radius: 8px;
-            padding: 10px 13px; font-size: 12px; color: #ddd;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+            background: rgba(255,255,255,0.95); border-radius: 8px;
+            padding: 10px 13px; font-size: 12px; color: #333;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2); border: 1px solid #ddd;
         }
-        #leaflet-legend h4 { margin: 0 0 7px; font-size: 13px; color: #fff; }
+        #leaflet-legend h4 { margin: 0 0 7px; font-size: 13px; color: #111; }
         .legend-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
         .legend-pill {
             padding: 1px 8px; border-radius: 9px; font-size: 11px;
-            font-weight: 900; color: white; border: 1.5px solid rgba(255,255,255,0.4);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.4); letter-spacing: 0.03em;
+            font-weight: 900; color: white; border: 1.5px solid rgba(0,0,0,0.15);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2); letter-spacing: 0.03em;
         }
+        body.dark-mode #leaflet-legend {
+            background: rgba(22,28,38,0.95); color: #ddd; border-color: #333;
+        }
+        body.dark-mode #leaflet-legend h4 { color: #fff; }
 
         /* Locate Button */
         #locate-btn {
@@ -129,11 +148,14 @@
 
         /* Tooltip */
         .stationinfo {
-            position: fixed; background: rgba(22,28,38,0.97); color: white;
+            position: fixed; background: rgba(255,255,255,0.97); color: #222;
             padding: 7px 12px; border-radius: 6px; pointer-events: none;
             font-size: 13px; z-index: 9999; max-width: 240px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.5);
-            border-left: 3px solid #f3791d;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+            border-left: 3px solid #f3791d; border: 1px solid #ddd;
+        }
+        body.dark-mode .stationinfo {
+            background: rgba(22,28,38,0.97); color: white; border-color: #444;
         }
 
         .U1{color:#7dad4c} .U2{color:#da421e} .U3{color:#16683d}
@@ -150,6 +172,7 @@
     <button id="toggle-live" class="control-button active">Live-Daten deaktivieren</button>
     <button id="refresh-data" class="control-button">Aktualisieren</button>
     <button id="fullscreen-toggle" class="control-button">Vollbild</button>
+    <button id="darkmode-toggle" class="control-button">🌙 Dark Mode</button>
     <div id="map-mode-toggle">
         <button id="mode-schematic" class="active">🗺 Schematisch</button>
         <button id="mode-real">🛰 Echte Karte</button>
@@ -262,14 +285,49 @@ function getTextColor(hex) {
 
 function getIcon(pn) {
     switch ((pn||'').toUpperCase()) {
-        case 'U':     return '';
-        case 'S':     return '';
-        case 'TRAM':  return '';
-        case 'BUS':   return '';
-        case 'FERRY': return '';
-        default:      return '';
+        case 'U':     return '🚇';
+        case 'S':     return '🚆';
+        case 'TRAM':  return '🚊';
+        case 'BUS':   return '🚌';
+        case 'FERRY': return '⛴';
+        default:      return '🚐';
     }
 }
+
+// ═══════════════════════════════════════════════════════
+// DARK MODE
+// ═══════════════════════════════════════════════════════
+let isDarkMode = false;
+let lightTileLayer = null;
+let darkTileLayer  = null;
+
+document.getElementById('darkmode-toggle').addEventListener('click', function() {
+    isDarkMode = !isDarkMode;
+    document.body.classList.toggle('dark-mode', isDarkMode);
+    this.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+    this.classList.toggle('active', isDarkMode);
+    if (leafletMap) {
+        if (isDarkMode) {
+            if (lightTileLayer) leafletMap.removeLayer(lightTileLayer);
+            if (!darkTileLayer) darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap contributors © CARTO', subdomains: 'abcd', maxZoom: 19
+            });
+            darkTileLayer.addTo(leafletMap);
+        } else {
+            if (darkTileLayer) leafletMap.removeLayer(darkTileLayer);
+            if (!lightTileLayer) lightTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors', maxZoom: 19
+            });
+            lightTileLayer.addTo(leafletMap);
+        }
+        // Update station fill color
+        Object.values(stationLayers).forEach(grp => {
+            grp.eachLayer(l => {
+                if (l.setStyle) l.setStyle({ fillColor: isDarkMode ? '#1a1a2e' : '#ffffff' });
+            });
+        });
+    }
+});
 
 // ═══════════════════════════════════════════════════════
 // MODUS UMSCHALTEN
@@ -304,9 +362,9 @@ function initLeaflet() {
 
     // Dunkles Karten-Theme (wie VBB-Livekarte)
     leafletMap = L.map('leaflet-map', { zoomControl: true }).setView([52.520, 13.405], 12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd', maxZoom: 19
+    lightTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
     }).addTo(leafletMap);
 
     // U-Bahn-Stationen
@@ -330,7 +388,7 @@ function initLeaflet() {
             L.circleMarker([p.xr, p.yr], {
                 radius: 4,
                 color: lineColors[line] || '#aaa',
-                fillColor: '#1a1a2e',
+            fillColor: '#ffffff',
                 fillOpacity: 1,
                 weight: 2
             }).addTo(group).bindPopup(
@@ -394,40 +452,40 @@ function updateLeafletTrains(movements) {
         const lat   = v.location.latitude;
         const lng   = v.location.longitude;
         const dest  = v.direction || '';
-        const delay = v.delay ? `+${Math.round(v.delay/60)}'` : '';
-        const bg    = getBgColor(v);
-        const fg    = getTextColor(bg);
-        const icon  = getIcon(pn);
-
-        const popupHtml = `
-            <div style="font-family:Arial,sans-serif;min-width:160px;font-size:13px">
-                <div style="background:${bg};color:${fg};padding:5px 11px;border-radius:5px;
-                     font-weight:900;font-size:14px;margin-bottom:7px;letter-spacing:.03em">
-                    ${icon} ${line}
-                </div>
-                ${dest  ? `<div>→ <b>${dest}</b></div>` : ''}
-                ${delay ? `<div style="color:#e74c3c;margin-top:3px;font-size:12px">⏱ ${delay} Verspätung</div>` : ''}
-            </div>`;
+        const delayMin = v.delay ? Math.round(v.delay / 60) : 0;
+        const bg = getBgColor(v);
+        const fg = getTextColor(bg);
 
         if (leafletMarkers[id]) {
             leafletMarkers[id].marker.setLatLng([lat, lng]);
-            leafletMarkers[id].marker.getPopup()?.setContent(popupHtml);
+            // Update stored data for popup refresh
+            leafletMarkers[id].delay = delayMin;
         } else {
             const divIcon = L.divIcon({
-                html: `<div class="vbb-marker" style="background:${bg};color:${fg}">
-                           <span class="vm-icon">${icon}</span>
-                           <span class="vm-name">${line}</span>
-                       </div>`,
+                html: `<div class="vbb-marker" style="background:${bg};color:${fg}">${line}</div>`,
                 className: '',
                 iconAnchor: [18, 10]
             });
 
+            const loadingPopup = `
+                <div style="font-family:Arial,sans-serif;min-width:200px;font-size:13px">
+                    <div style="background:${bg};color:${fg};padding:5px 11px;border-radius:5px;
+                         font-weight:900;font-size:15px;margin-bottom:8px;letter-spacing:.04em">${line}</div>
+                    ${dest ? `<div style="margin-bottom:6px;font-weight:bold">→ ${dest}</div>` : ''}
+                    <div style="color:#888;font-size:11px;text-align:center;padding:8px 0">Lade Halteinfos…</div>
+                </div>`;
+
             const marker = L.marker([lat, lng], {
                 icon: divIcon,
                 zIndexOffset: pn === 'U' ? 200 : (pn === 'S' ? 100 : 0)
-            }).addTo(leafletMap).bindPopup(popupHtml, { offset:[0,-6] });
+            }).addTo(leafletMap).bindPopup(loadingPopup, { offset:[0,-6], maxWidth: 280 });
 
-            leafletMarkers[id] = { marker, line, productName: pn };
+            marker.on('popupopen', () => {
+                const info = leafletMarkers[id];
+                if (info) fetchTripDetails(id, line, dest, bg, fg, info.delay);
+            });
+
+            leafletMarkers[id] = { marker, line, productName: pn, dest, delay: delayMin, bg, fg };
         }
     });
 
@@ -438,6 +496,97 @@ function updateLeafletTrains(movements) {
             delete leafletMarkers[id];
         }
     });
+}
+
+// ═══════════════════════════════════════════════════════
+// TRIP-DETAILS: Vorheriger / Nächster Halt
+// ═══════════════════════════════════════════════════════
+async function fetchTripDetails(tripId, line, dest, bg, fg, delayMin) {
+    const info = leafletMarkers[tripId];
+    if (!info) return;
+
+    try {
+        const url = `https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const trip = data.trip || data;
+        const stopovers = trip.stopovers || trip.stopSequence || [];
+
+        const now = Date.now();
+        let prevStop = null, nextStop = null, foundCurrent = false;
+
+        for (let i = 0; i < stopovers.length; i++) {
+            const s = stopovers[i];
+            const dep = s.departure ? new Date(s.departure).getTime() : null;
+            const arr = s.arrival   ? new Date(s.arrival).getTime()   : null;
+
+            if (!foundCurrent) {
+                if (dep && dep > now) {
+                    // This is next stop
+                    nextStop = { name: s.stop?.name || '?', time: s.departure, delay: s.departureDelay || 0 };
+                    if (i > 0) {
+                        const ps = stopovers[i-1];
+                        prevStop = { name: ps.stop?.name || '?', time: ps.departure || ps.arrival, delay: ps.departureDelay || ps.arrivalDelay || 0 };
+                    }
+                    foundCurrent = true;
+                    break;
+                }
+            }
+        }
+
+        function fmtTime(iso, delay) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            const hh = d.getHours().toString().padStart(2,'0');
+            const mm = d.getMinutes().toString().padStart(2,'0');
+            const dm = Math.round(delay / 60);
+            const dstr = dm >= 0 ? `+${dm}` : `${dm}`;
+            const col = dm > 0 ? '#c0392b' : '#27ae60';
+            return `${hh}:${mm} <span style="color:${col};font-weight:bold">${dstr}</span>`;
+        }
+
+        const delayStr = delayMin > 0 ? `+${delayMin} Min` : delayMin < 0 ? `${delayMin} Min` : '+0';
+        const delayCol = delayMin > 0 ? '#c0392b' : '#27ae60';
+
+        const html = `
+            <div style="font-family:Arial,sans-serif;min-width:220px;font-size:13px;line-height:1.5">
+                <div style="background:${bg};color:${fg};padding:6px 12px;border-radius:6px;
+                     font-weight:900;font-size:15px;margin-bottom:8px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center">
+                    <span>${line}</span>
+                    ${delayMin !== 0 ? `<span style="font-size:11px;opacity:.9">${delayStr}</span>` : ''}
+                </div>
+                ${dest ? `<div style="margin-bottom:8px;font-weight:bold;font-size:13px">→ ${dest}</div>` : ''}
+                <hr style="border:none;border-top:1px solid #ddd;margin:6px 0">
+                ${prevStop ? `
+                    <div style="margin-bottom:6px">
+                        <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em">Vorheriger Halt</div>
+                        <div style="font-weight:bold">${prevStop.name}</div>
+                        <div style="font-size:12px;color:#555">${fmtTime(prevStop.time, prevStop.delay)}</div>
+                    </div>` : ''}
+                ${nextStop ? `
+                    <div>
+                        <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em">Nächster Halt</div>
+                        <div style="font-weight:bold">${nextStop.name}</div>
+                        <div style="font-size:12px;color:#555">${fmtTime(nextStop.time, nextStop.delay)}</div>
+                    </div>` : `<div style="color:#888;font-size:12px">Keine weiteren Halte gefunden</div>`}
+            </div>`;
+
+        if (info.marker.isPopupOpen()) {
+            info.marker.getPopup().setContent(html);
+        }
+    } catch(e) {
+        console.warn('Trip-Details Fehler:', e);
+        if (info.marker.isPopupOpen()) {
+            const fallback = `
+                <div style="font-family:Arial,sans-serif;min-width:200px;font-size:13px">
+                    <div style="background:${bg};color:${fg};padding:5px 11px;border-radius:5px;
+                         font-weight:900;font-size:15px;margin-bottom:8px">${line}</div>
+                    ${dest ? `<div style="font-weight:bold">→ ${dest}</div>` : ''}
+                    <div style="color:#888;font-size:11px;margin-top:6px">Details nicht verfügbar</div>
+                </div>`;
+            info.marker.getPopup().setContent(fallback);
+        }
+    }
 }
 
 // ═══════════════════════════════════════════════════════
