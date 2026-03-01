@@ -17,12 +17,16 @@
     <script src="trainRoutes.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="/style.css">
-    <style>
+ <style>
         /* ── Tracker-spezifische Styles ─────────────────────────────── */
 
         /* SVG-Container */
         #svg-container {
-            overflow: hidden; width: 100%; background: white; position: relative;
+            overflow: hidden; width: 100vw; background: white; position: relative;
+            margin-left: calc(-50vw + 50%);  /* Aus Container-Begrenzung herausbrechen */
+        }
+        #leaflet-container { display: none; width: 100vw !important; height: 85vh; position: relative; overflow: hidden;
+            margin-left: calc(-50vw + 50%);
         }
         #svg-container svg { width: 100%; display: block; }
 
@@ -99,7 +103,7 @@
         #line-toggle-container input { margin-right: 3px; accent-color: #4CAF50; }
 
         /* Leaflet */
-        #leaflet-container { display: none; width: 100%; height: 85vh; position: relative; overflow: hidden; }
+        /* leaflet-container oben definiert */
         #leaflet-map { width: 100%; height: 100%; }
 
         .vbb-marker {
@@ -253,6 +257,9 @@
         .popup-loading { text-align: center; color: #999; padding: 12px 0; font-size: 12px; }
         .popup-error { text-align: center; color: #c0392b; padding: 8px 0; font-size: 12px; }
 
+        /* Kein horizontaler Scrollbalken durch 100vw-Elemente */
+        body { overflow-x: hidden; }
+
         /* U-Bahn Linienfarben */
         .U1{color:#7dad4c} .U2{color:#da421e} .U3{color:#16683d}
         .U4{color:#f0d722} .U5{color:#7e5330} .U6{color:#8c6dab}
@@ -265,7 +272,7 @@
     <header>
         <h1>BVG Live Tracker</h1>
         <a href="/" target="_self">
-            <img src="/CC v2-1grau (1) - Kopie.png" alt="Craftingkatze Logo" class="logo" draggable="false">
+            <img src="CC v2-1grau (1) - Kopie.png" alt="Craftingkatze Logo" class="logo" draggable="false">
         </a>
     </header>
 
@@ -274,13 +281,13 @@
         <!-- Controls -->
         <section class="impressum">
             <div class="controls">
-                <button id="toggle-live" class="control-button active">Live pausieren</button>
-                <button id="refresh-data" class="control-button">Aktualisieren</button>
+                <button id="toggle-live" class="control-button active">⏸ Live pausieren</button>
+                <button id="refresh-data" class="control-button">🔄 Aktualisieren</button>
                 <button id="fullscreen-toggle" class="control-button">⛶ Vollbild</button>
-                <button id="darkmode-toggle" class="control-button">Dark Mode</button>
+                <button id="darkmode-toggle" class="control-button">🌙 Dark Mode</button>
                 <div id="map-mode-toggle">
-                    <button id="mode-schematic" class="active">Schematisch</button>
-                    <button id="mode-real">Echte Karte</button>
+                    <button id="mode-schematic" class="active">🗺 Schematisch</button>
+                    <button id="mode-real">🛰 Echte Karte</button>
                 </div>
             </div>
             <div class="refresh-info">
@@ -308,19 +315,19 @@
 
         <br>
 
-        <!-- Schematische Karte -->
-        <section class="impressum" style="padding: 0; overflow: hidden;">
-            <div id="svg-container">
-                <div id="zoom-controls">
-                    <button class="zoom-btn" id="zoom-in">+</button>
-                    <button class="zoom-btn" id="zoom-reset" style="font-size:13px;">⌂</button>
-                    <button class="zoom-btn" id="zoom-out">−</button>
-                </div>
-            </div>
-        </section>
+    </main>
 
-        <!-- Echte Karte (kein section-wrapper, braucht volle Breite) -->
-        <div id="leaflet-container">
+    <!-- Schematische Karte – volle Bildschirmbreite, außerhalb main -->
+    <div id="svg-container">
+        <div id="zoom-controls">
+            <button class="zoom-btn" id="zoom-in">+</button>
+            <button class="zoom-btn" id="zoom-reset" style="font-size:13px;">⌂</button>
+            <button class="zoom-btn" id="zoom-out">−</button>
+        </div>
+    </div>
+
+    <!-- Echte Karte – volle Bildschirmbreite -->
+    <div id="leaflet-container">
             <div id="leaflet-map"></div>
             <div id="leaflet-legend">
                 <h4>Fahrzeugtypen</h4>
@@ -349,9 +356,6 @@
             </div>
         </div>
 
-        <br>
-
-    </main>
 
     <!-- Hover-Tooltip -->
     <div id="stationinfo" class="stationinfo" style="display:none;"></div>
@@ -381,8 +385,8 @@
     <hr>
     <br>
     <div class="footer">
-        <a href="/imp">Impressum</a>
-        <a href="/Datenschutzerklaerung">Datenschutzerklärung</a>
+        <a href="imp">Impressum</a>
+        <a href="Datenschutzerklaerung">Datenschutzerklärung</a>
     </div>
     <br>
 
