@@ -419,7 +419,7 @@ const u1Points = [
               { "x": 570.00, "y": 693.00, "xr": 52.489583, "yr": 13.330833, "route": "U9", "station": "Zwischen: Berliner Straße/Güntzelstraße" },
               { "x": 570.00, "y": 679.00, "xr": 52.491944, "yr": 13.330833, "route": "U9", "station": "Güntzelstraße" },
               { "x": 570.00, "y": 662.50, "xr": 52.494306, "yr": 13.330972, "route": "U9", "station": "Zwischen: Güntzelstraße/Spichernstraße" },
-              { "x": 570.00, "y": 646.00, "xr": 52.496667, "yr": 13.331111, "route": "U9", "station": "Spichernstraße" },
+              { "x": 570.00, "y": 648.00, "xr": 52.496667, "yr": 13.331111, "route": "U9", "station": "Spichernstraße" },
               { "x": 570.00, "y": 620.50, "xr": 52.500509, "yr": 13.331672, "route": "U9", "station": "Zwischen: Spichernstraße/Kurfürstendamm" },
               { "x": 570.00, "y": 595.00, "xr": 52.503566, "yr": 13.331103, "route": "U9", "station": "Kurfürstendamm" },
               { "x": 570.00, "y": 566.50, "xr": 52.505630, "yr": 13.331575, "route": "U9", "station": "Zwischen: Kurfürstendamm/Zoologischer Garten" },
