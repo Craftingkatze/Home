@@ -1,119 +1,133 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <link rel="icon" type="image/png" href="/CC v2-1grau (1) - Kopie.png">
-    <nav>
-        <a href="/">Home</a>
-        <a href="/wetter">Wetter App</a>
-        <a href="/twitch">Twitch App</a>
-        <a href="/server">Scuffed Attack</a>
-        <a href="/flags">Flags</a>
-        <a href="/vbb-select" class="active">Public Transport</a>
-    </nav>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BVG Live Tracker – Vin(i)cent</title>
+    <title>BVG Berlin – Live</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="trainRoutes.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="/style.css">
- <style>
-        /* ── Tracker-spezifische Styles ─────────────────────────────── */
+    <style>
+        * { box-sizing: border-box; }
 
-        /* SVG-Container */
+        body {
+            font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0;
+            background: #f4f7f6; color: #2c3e50; transition: background .3s, color .3s;
+        }
+        body.dark-mode { background: #0f1117; color: #e0e0e0; }
+        body.dark-mode #svg-container { background: #1a1a2e; }
+        body.dark-mode #svg-container svg { border-color: #333; }
+        body.dark-mode .control-button { background: #3a4a5a; }
+        body.dark-mode .control-button:hover { background: #4a5a6a; }
+        body.dark-mode .control-button.active { background: #c0392b; }
+        body.dark-mode #map-mode-toggle { border-color: #4a5a6a; }
+        body.dark-mode #map-mode-toggle button { background: #1e2a3a; color: #ccc; }
+        body.dark-mode #map-mode-toggle button.active { background: #3a4a5a; color: white; }
+        body.dark-mode .refresh-info { color: #999; }
+        body.dark-mode #line-toggle-container label { color: #ccc; }
+
+        h1 { color: inherit; margin: 12px 0 4px; font-size: 1.4em; }
+
+        .controls {
+            margin: 6px 0; display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 6px; padding: 0 10px;
+        }
+        .control-button {
+            padding: 7px 14px; background: #2c3e50; color: white;
+            border: none; border-radius: 5px; cursor: pointer; font-size: 14px;
+        }
+        .control-button:hover { background: #3d5166; }
+        .control-button.active { background: #c0392b; }
+
+        #map-mode-toggle {
+            display: inline-flex; border-radius: 5px; overflow: hidden; border: 2px solid #2c3e50;
+        }
+        #map-mode-toggle button {
+            padding: 7px 14px; border: none; cursor: pointer;
+            font-size: 14px; background: white; color: #2c3e50; transition: background .2s, color .2s;
+        }
+        #map-mode-toggle button.active { background: #2c3e50; color: white; }
+
+        .refresh-info { font-size: 13px; color: #666; margin: 3px 0 6px; }
+
+        #line-toggle-container {
+            margin: 2px 0 8px; display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 5px; padding: 0 10px;
+        }
+        #line-toggle-container label { font-size: 13px; cursor: pointer; }
+
+        /* ── SVG-Container & Vollbild ─────────────────────────────────────── */
         #svg-container {
-            overflow: hidden; width: 100vw; background: white; position: relative;
-            margin-left: calc(-50vw + 50%);  /* Aus Container-Begrenzung herausbrechen */
+            overflow: hidden; width: 100%; background: white; position: relative;
+            /* Kein fester height – SVG bestimmt die Höhe */
         }
-        #leaflet-container { display: none; width: 100vw !important; height: 85vh; position: relative; overflow: hidden;
-            margin-left: calc(-50vw + 50%);
-        }
-        #svg-container svg { width: 100%; display: block; }
+        #svg-container svg { border: 1px solid #ccc; width: 100%; display: block; }
+        body.dark-mode #svg-container { background: #1a1a2e; }
 
+        /* Im Vollbild: Container füllt alles, SVG füllt Container */
         #svg-container:fullscreen,
         #svg-container:-webkit-full-screen,
         #svg-container:-moz-full-screen {
             background-color: white;
-            width: 100vw !important; height: 100vh !important;
-            overflow: hidden; display: flex; flex-direction: column;
+            width: 100vw !important;
+            height: 100vh !important;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        body.dark-mode #svg-container:fullscreen,
+        body.dark-mode #svg-container:-webkit-full-screen {
+            background-color: #1a1a2e;
         }
         #svg-container:fullscreen svg,
         #svg-container:-webkit-full-screen svg,
         #svg-container:-moz-full-screen svg {
-            width: 100% !important; height: 100% !important; flex: 1; min-height: 0;
+            width: 100% !important;
+            height: 100% !important;
+            flex: 1;
+            min-height: 0;
         }
         ::backdrop { background-color: white; }
 
-        /* Zoom-Buttons */
+        /* ── Zoom-Buttons ────────────────────────────────────────────────── */
+        /* Normal: fixed am rechten Rand */
         #zoom-controls {
             position: fixed; bottom: 20px; right: 20px;
             display: flex; flex-direction: column; gap: 6px; z-index: 999;
         }
+        /* Vollbild: absolute innerhalb des Containers */
         #svg-container:fullscreen #zoom-controls,
         #svg-container:-webkit-full-screen #zoom-controls,
-        #svg-container:-moz-full-screen #zoom-controls { position: absolute; bottom: 20px; right: 20px; }
+        #svg-container:-moz-full-screen #zoom-controls {
+            position: absolute; bottom: 20px; right: 20px;
+        }
         .zoom-btn {
             width: 38px; height: 38px; font-size: 22px;
-            background: #4CAF50; color: white; border: none; border-radius: 6px;
-            cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            background: #2c3e50; color: white; border: none; border-radius: 6px;
+            cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
         }
-        .zoom-btn:hover { background-color: #45a049; }
+        .zoom-btn:hover { background: #3d5166; }
 
-        /* Controls */
-        .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-
-        .control-button {
-            display: inline-block; padding: 10px 20px;
-            background-color: #4CAF50; color: white;
-            border: none; border-radius: 5px; cursor: pointer;
-            font-size: 14px; font-weight: 600; text-decoration: none;
-            transition: background-color 0.3s;
-        }
-        .control-button:hover { background-color: #45a049; }
-        .control-button.active { background-color: #c0392b; }
-        .control-button.active:hover { background-color: #a93226; }
-
-        /* Modus-Toggle */
-        #map-mode-toggle {
-            display: inline-flex; border-radius: 5px; overflow: hidden; border: 2px solid #4CAF50;
-        }
-        #map-mode-toggle button {
-            padding: 8px 16px; border: none; cursor: pointer;
-            font-size: 14px; background: white; color: #4CAF50;
-            font-weight: 600; transition: background .2s, color .2s;
-        }
-        #map-mode-toggle button.active { background: #4CAF50; color: white; }
-        #map-mode-toggle button:hover:not(.active) { background: #f0faf0; }
-
-        /* Status-Info */
-        .refresh-info { font-size: 12px; color: #888; margin-top: 8px; text-align: center; }
-        .refresh-info span { font-weight: 600; color: #555; }
-
-        /* Linien-Filter */
-        #line-toggle-container {
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
-        }
-        #line-toggle-container label {
-            font-size: 13px; cursor: pointer; user-select: none;
-            background: #f5f5f5; border-radius: 5px; padding: 4px 10px;
-            border: 1px solid #ddd; transition: background .15s;
-        }
-        #line-toggle-container label:hover { background: #e8f5e9; }
-        #line-toggle-container input { margin-right: 3px; accent-color: #4CAF50; }
-
-        /* Leaflet */
-        /* leaflet-container oben definiert */
+        /* ── Leaflet ─────────────────────────────────────────────────────── */
+        #leaflet-container { display: none; width: 100%; height: 85vh; position: relative; overflow: hidden; }
         #leaflet-map { width: 100%; height: 100%; }
 
         .vbb-marker {
-            display: inline-flex; align-items: center; padding: 2px 8px;
-            border-radius: 12px; font-size: 11px; font-weight: 900;
-            white-space: nowrap; cursor: pointer; box-shadow: 0 1px 5px rgba(0,0,0,0.35);
-            border: 1.5px solid rgba(255,255,255,0.55); line-height: 1.4;
-            user-select: none; transition: transform 0.12s, box-shadow 0.12s; letter-spacing: 0.04em;
+            display: inline-flex; align-items: center;
+            padding: 2px 8px; border-radius: 12px;
+            font-size: 11px; font-weight: 900;
+            white-space: nowrap; cursor: pointer;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.35);
+            border: 1.5px solid rgba(255,255,255,0.55);
+            line-height: 1.4; user-select: none;
+            transition: transform 0.12s, box-shadow 0.12s;
+            letter-spacing: 0.04em;
         }
-        .vbb-marker:hover { transform: scale(1.18); box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 9999 !important; }
+        .vbb-marker:hover {
+            transform: scale(1.18); box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 9999 !important;
+        }
 
         #leaflet-legend {
             position: absolute; top: 10px; left: 10px; z-index: 1000;
@@ -128,14 +142,16 @@
             font-weight: 900; color: white; border: 1.5px solid rgba(0,0,0,0.15);
             box-shadow: 0 1px 3px rgba(0,0,0,0.2); letter-spacing: 0.03em;
         }
+        body.dark-mode #leaflet-legend { background: rgba(22,28,38,0.95); color: #ddd; border-color: #333; }
+        body.dark-mode #leaflet-legend h4 { color: #fff; }
 
         #locate-btn {
             position: absolute; bottom: 80px; right: 10px; z-index: 1000;
-            background: #4CAF50; color: white; border: none; border-radius: 50%;
+            background: #2c3e50; color: white; border: none; border-radius: 50%;
             width: 44px; height: 44px; font-size: 20px; cursor: pointer;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5);
         }
-        #locate-btn:hover { background: #45a049; }
+        #locate-btn:hover { background: #3d5166; }
 
         #stop-tracking-btn {
             position: absolute; bottom: 30px; right: 10px; z-index: 1001;
@@ -145,7 +161,7 @@
         }
         #stop-tracking-btn:hover { background: #a93226; }
 
-        /* Perlenschnur-Panel */
+        /* ── Perlenschnur-Panel ───────────────────────────────────────────── */
         #stop-sequence-panel {
             position: absolute; top: 0; right: 0; bottom: 0; z-index: 1000;
             width: 260px; background: rgba(255,255,255,0.97);
@@ -154,19 +170,22 @@
             display: flex; flex-direction: column;
         }
         #stop-sequence-panel.open { transform: translateX(0); }
+        body.dark-mode #stop-sequence-panel { background: rgba(18,24,34,0.98); border-color: #333; }
         #ssp-header {
             padding: 12px 14px 8px; border-bottom: 1px solid #eee;
             display: flex; align-items: center; gap: 8px; flex-shrink: 0;
         }
+        body.dark-mode #ssp-header { border-color: #333; }
         #ssp-line-badge { padding: 3px 10px; border-radius: 10px; font-weight: 900; font-size: 14px; letter-spacing: .04em; }
         #ssp-title { font-size: 12px; color: #555; flex: 1; }
+        body.dark-mode #ssp-title { color: #aaa; }
         #ssp-close { background: none; border: none; font-size: 18px; cursor: pointer; color: #888; padding: 0 2px; line-height: 1; }
         #ssp-close:hover { color: #333; }
         #ssp-stops { flex: 1; padding: 8px 0; overflow-y: auto; }
-        .ssp-stop { display: flex; align-items: flex-start; gap: 0; padding: 2px 14px 2px 0; position: relative; }
-        .ssp-stop.is-next { background: rgba(76,175,80,0.07); }
+        .ssp-stop { display: flex; align-items: flex-start; gap: 0; padding: 2px 14px 2px 0; position: relative; cursor: default; }
+        .ssp-stop.is-next { background: rgba(243,121,29,0.07); }
         .ssp-line-col { width: 32px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
-        .ssp-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid currentColor; background: white; flex-shrink: 0; z-index: 1; }
+        .ssp-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid currentColor; background: white; flex-shrink: 0; z-index: 1; position: relative; }
         .ssp-stop.passed .ssp-dot { background: currentColor; opacity: .5; }
         .ssp-stop.is-next .ssp-dot { width: 13px; height: 13px; border-width: 2.5px; }
         .ssp-stop.is-current .ssp-dot { background: currentColor; width: 13px; height: 13px; }
@@ -175,8 +194,10 @@
         .ssp-stop:last-child  .ssp-vline-bot { display: none; }
         .ssp-info { flex: 1; padding: 3px 0 3px 4px; min-width: 0; }
         .ssp-stop-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #222; }
+        body.dark-mode .ssp-stop-name { color: #ddd; }
         .ssp-stop.passed .ssp-stop-name { color: #aaa; }
-        .ssp-stop.is-next .ssp-stop-name { color: #4CAF50; font-weight: 800; }
+        body.dark-mode .ssp-stop.passed .ssp-stop-name { color: #666; }
+        .ssp-stop.is-next .ssp-stop-name { color: #f3791d; font-weight: 800; }
         .ssp-time { font-size: 10px; color: #888; margin-top: 1px; }
         .ssp-delay-pos { color: #c0392b; font-weight: bold; }
         .ssp-delay-neg { color: #27ae60; font-weight: bold; }
@@ -193,74 +214,101 @@
             50%      { box-shadow: 0 2px 16px rgba(192,57,43,0.8); }
         }
 
-        /* Hover-Tooltip */
+        /* ── Hover-Tooltip ───────────────────────────────────────────────── */
         .stationinfo {
             position: fixed; background: rgba(255,255,255,0.97); color: #222;
             padding: 7px 12px; border-radius: 6px; pointer-events: none;
             font-size: 13px; z-index: 9999; max-width: 240px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.15); border-left: 3px solid #4CAF50; border: 1px solid #ddd;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+            border-left: 3px solid #f3791d; border: 1px solid #ddd;
         }
+        body.dark-mode .stationinfo { background: rgba(22,28,38,0.97); color: white; border-color: #444; }
 
-        /* Schematisches Popup */
+        /* ── Schematisches Detail-Popup ──────────────────────────────────── */
         #schematic-popup-overlay {
-            display: none; position: fixed; inset: 0; z-index: 10000;
-            background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
+            display: none;
+            position: fixed; inset: 0; z-index: 10000;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(2px);
             align-items: center; justify-content: center;
         }
-        #schematic-popup-overlay.visible { display: flex; }
-        #schematic-popup {
-            background: #fff; border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            min-width: 280px; max-width: 340px; width: 90vw;
-            overflow: hidden; font-family: Arial, sans-serif; font-size: 13px;
-            position: relative; animation: popup-in .18s ease;
+        #schematic-popup-overlay.visible {
+            display: flex;
         }
-        @keyframes popup-in { from { transform: scale(0.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        #schematic-popup {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+            min-width: 280px; max-width: 340px; width: 90vw;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            position: relative;
+            animation: popup-in .18s ease;
+        }
+        @keyframes popup-in {
+            from { transform: scale(0.88); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        body.dark-mode #schematic-popup { background: #1a2232; color: #ddd; }
         #schematic-popup-close {
             position: absolute; top: 8px; right: 10px;
             background: none; border: none; font-size: 20px;
-            cursor: pointer; color: rgba(255,255,255,0.75); z-index: 1; line-height: 1;
+            cursor: pointer; color: rgba(255,255,255,0.7); z-index: 1;
+            line-height: 1;
         }
         #schematic-popup-close:hover { color: #fff; }
         #schematic-popup-header {
-            padding: 12px 16px 10px; display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px 10px;
+            display: flex; align-items: center; gap: 10px;
         }
         #schematic-popup-badge {
             padding: 4px 12px; border-radius: 10px;
             font-weight: 900; font-size: 16px; letter-spacing: .04em;
-            background: rgba(0,0,0,0.15); flex-shrink: 0;
+            flex-shrink: 0;
         }
         #schematic-popup-dest {
             font-weight: bold; font-size: 13px; flex: 1;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
             color: rgba(255,255,255,0.9);
         }
-        #schematic-popup-delay { font-size: 11px; opacity: .85; flex-shrink: 0; font-weight: 600; }
+        #schematic-popup-delay {
+            font-size: 11px; opacity: .85; flex-shrink: 0; font-weight: 600;
+        }
         #schematic-popup-body { padding: 12px 16px 14px; }
-        #schematic-popup-next { font-size: 12px; color: #666; margin-bottom: 10px; }
+        #schematic-popup-next {
+            font-size: 12px; color: #666; margin-bottom: 10px;
+        }
+        body.dark-mode #schematic-popup-next { color: #aaa; }
         #schematic-popup-next strong { color: #222; }
+        body.dark-mode #schematic-popup-next strong { color: #fff; }
         .popup-btn-row { display: flex; gap: 8px; margin-bottom: 12px; }
         .popup-btn {
-            flex: 1; padding: 10px 6px; border: none; border-radius: 5px;
+            flex: 1; padding: 8px 6px; border: none; border-radius: 7px;
             cursor: pointer; font-size: 12px; font-weight: 700;
-            background-color: #4CAF50; color: white; transition: background-color 0.3s;
+            transition: opacity .15s;
         }
-        .popup-btn:hover { background-color: #45a049; }
-        #schematic-popup-stops { border-top: 1px solid #eee; padding-top: 10px; }
-        .popup-stop-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
+        .popup-btn:hover { opacity: .85; }
+        #schematic-popup-stops {
+            border-top: 1px solid #eee; padding-top: 10px;
+        }
+        body.dark-mode #schematic-popup-stops { border-color: #2a3a4a; }
+        .popup-stop-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 0; font-size: 12px;
+        }
         .popup-stop-label {
             font-size: 9px; text-transform: uppercase; letter-spacing: .06em;
             color: #999; width: 68px; flex-shrink: 0; text-align: right;
         }
         .popup-stop-name { font-weight: 600; flex: 1; color: #222; }
+        body.dark-mode .popup-stop-name { color: #ddd; }
         .popup-stop-time { font-size: 11px; color: #888; flex-shrink: 0; }
-        .popup-loading { text-align: center; color: #999; padding: 12px 0; font-size: 12px; }
+        .popup-loading {
+            text-align: center; color: #999; padding: 12px 0; font-size: 12px;
+        }
         .popup-error { text-align: center; color: #c0392b; padding: 8px 0; font-size: 12px; }
 
-        /* Kein horizontaler Scrollbalken durch 100vw-Elemente */
-        body { overflow-x: hidden; }
-
-        /* U-Bahn Linienfarben */
         .U1{color:#7dad4c} .U2{color:#da421e} .U3{color:#16683d}
         .U4{color:#f0d722} .U5{color:#7e5330} .U6{color:#8c6dab}
         .U7{color:#009bd5} .U8{color:#224f86} .U9{color:#f3791d}
@@ -268,128 +316,102 @@
     </style>
 </head>
 <body>
-    <br>
-    <header>
-        <h1>BVG Live Tracker</h1>
-        <a href="/" target="_self">
-            <img src="CC v2-1grau (1) - Kopie.png" alt="Craftingkatze Logo" class="logo" draggable="false">
-        </a>
-    </header>
 
-    <main>
+<h1>BVG Berlin – Live U-Bahn Tracker</h1>
 
-        <!-- Controls -->
-        <section class="impressum">
-            <div class="controls">
-                <button id="toggle-live" class="control-button active">⏸ Live pausieren</button>
-                <button id="refresh-data" class="control-button">🔄 Aktualisieren</button>
-                <button id="fullscreen-toggle" class="control-button">⛶ Vollbild</button>
-                <button id="darkmode-toggle" class="control-button">🌙 Dark Mode</button>
-                <div id="map-mode-toggle">
-                    <button id="mode-schematic" class="active">🗺 Schematisch</button>
-                    <button id="mode-real">🛰 Echte Karte</button>
-                </div>
-            </div>
-            <div class="refresh-info">
-                Letzte Aktualisierung: <span id="last-update">–</span>
-                &nbsp;|&nbsp; Aktive Fahrzeuge: <span id="train-count">0</span>
-            </div>
-        </section>
+<div class="controls">
+    <button id="toggle-live" class="control-button active">Live-Daten deaktivieren</button>
+    <button id="refresh-data" class="control-button">Aktualisieren</button>
+    <button id="fullscreen-toggle" class="control-button">Vollbild</button>
+    <button id="darkmode-toggle" class="control-button">🌙 Dark Mode</button>
+    <div id="map-mode-toggle">
+        <button id="mode-schematic" class="active">🗺 Schematisch</button>
+        <button id="mode-real">🛰 Echte Karte</button>
+    </div>
+</div>
 
-        <br>
+<div class="refresh-info">
+    Letzte Aktualisierung: <span id="last-update">–</span>
+    | Aktive Fahrzeuge: <span id="train-count">0</span>
+</div>
 
-        <!-- Linien-Filter -->
-        <section class="impressum">
-            <div id="line-toggle-container">
-                <label><input type="checkbox" class="line-toggle" value="U1" checked> U1</label>
-                <label><input type="checkbox" class="line-toggle" value="U2" checked> U2</label>
-                <label><input type="checkbox" class="line-toggle" value="U3" checked> U3</label>
-                <label><input type="checkbox" class="line-toggle" value="U4" checked> U4</label>
-                <label><input type="checkbox" class="line-toggle" value="U5" checked> U5</label>
-                <label><input type="checkbox" class="line-toggle" value="U6" checked> U6</label>
-                <label><input type="checkbox" class="line-toggle" value="U7" checked> U7</label>
-                <label><input type="checkbox" class="line-toggle" value="U8" checked> U8</label>
-                <label><input type="checkbox" class="line-toggle" value="U9" checked> U9</label>
-            </div>
-        </section>
+<div id="line-toggle-container">
+    <label><input type="checkbox" class="line-toggle" value="U1" checked> U1</label>
+    <label><input type="checkbox" class="line-toggle" value="U2" checked> U2</label>
+    <label><input type="checkbox" class="line-toggle" value="U3" checked> U3</label>
+    <label><input type="checkbox" class="line-toggle" value="U4" checked> U4</label>
+    <label><input type="checkbox" class="line-toggle" value="U5" checked> U5</label>
+    <label><input type="checkbox" class="line-toggle" value="U6" checked> U6</label>
+    <label><input type="checkbox" class="line-toggle" value="U7" checked> U7</label>
+    <label><input type="checkbox" class="line-toggle" value="U8" checked> U8</label>
+    <label><input type="checkbox" class="line-toggle" value="U9" checked> U9</label>
+</div>
 
-        <br>
+<!-- Schematische Karte -->
+<div id="svg-container">
+    <div id="zoom-controls">
+        <button class="zoom-btn" id="zoom-in">+</button>
+        <button class="zoom-btn" id="zoom-reset" style="font-size:13px;">⌂</button>
+        <button class="zoom-btn" id="zoom-out">−</button>
+    </div>
+</div>
 
-    </main>
-
-    <!-- Schematische Karte – volle Bildschirmbreite, außerhalb main -->
-    <div id="svg-container">
-        <div id="zoom-controls">
-            <button class="zoom-btn" id="zoom-in">+</button>
-            <button class="zoom-btn" id="zoom-reset" style="font-size:13px;">⌂</button>
-            <button class="zoom-btn" id="zoom-out">−</button>
+<!-- Echte Karte -->
+<div id="leaflet-container">
+    <div id="leaflet-map"></div>
+    <div id="leaflet-legend">
+        <h4>Fahrzeugtypen</h4>
+        <div class="legend-item"><span class="legend-pill" style="background:#115D91">U7</span> U-Bahn</div>
+        <div class="legend-item"><span class="legend-pill" style="background:#008D4F">S3</span> S-Bahn</div>
+        <div class="legend-item"><span class="legend-pill" style="background:#BE1414">M10</span> Tram</div>
+        <div class="legend-item"><span class="legend-pill" style="background:#95276E">247</span> Bus</div>
+        <div class="legend-item"><span class="legend-pill" style="background:#528DBA">F10</span> Fähre</div>
+        <hr style="margin:7px 0;border-color:#444">
+        <div class="legend-item">
+            <button id="toggle-stations-btn" style="width:100%;padding:4px 8px;font-size:11px;cursor:pointer;background:#2c3e50;color:white;border:none;border-radius:4px;">
+                🚉 Stationen ausblenden
+            </button>
         </div>
     </div>
-
-    <!-- Echte Karte – volle Bildschirmbreite -->
-    <div id="leaflet-container">
-            <div id="leaflet-map"></div>
-            <div id="leaflet-legend">
-                <h4>Fahrzeugtypen</h4>
-                <div class="legend-item"><span class="legend-pill" style="background:#115D91">U7</span> U-Bahn</div>
-                <div class="legend-item"><span class="legend-pill" style="background:#008D4F">S3</span> S-Bahn</div>
-                <div class="legend-item"><span class="legend-pill" style="background:#BE1414">M10</span> Tram</div>
-                <div class="legend-item"><span class="legend-pill" style="background:#95276E">247</span> Bus</div>
-                <div class="legend-item"><span class="legend-pill" style="background:#528DBA">F10</span> Fähre</div>
-                <hr style="margin:7px 0;border-color:#ddd">
-                <div class="legend-item">
-                    <button id="toggle-stations-btn" style="width:100%;padding:4px 8px;font-size:11px;cursor:pointer;background:#4CAF50;color:white;border:none;border-radius:4px;">
-                        🚉 Stationen ausblenden
-                    </button>
-                </div>
-            </div>
-            <button id="locate-btn" title="Mein Standort">📍</button>
-            <button id="stop-tracking-btn">✕ Tracking beenden</button>
-            <div id="tracking-badge" title="Tracking aktiv – klicken zum Beenden">⊙ Tracking</div>
-            <div id="stop-sequence-panel">
-                <div id="ssp-header">
-                    <span id="ssp-line-badge">–</span>
-                    <span id="ssp-title">Stationsverlauf</span>
-                    <button id="ssp-close">×</button>
-                </div>
-                <div id="ssp-stops"></div>
-            </div>
+    <button id="locate-btn" title="Mein Standort">📍</button>
+    <button id="stop-tracking-btn">✕ Tracking beenden</button>
+    <div id="tracking-badge" title="Tracking aktiv – klicken zum Beenden">⊙ Tracking</div>
+    <div id="stop-sequence-panel">
+        <div id="ssp-header">
+            <span id="ssp-line-badge">–</span>
+            <span id="ssp-title">Stationsverlauf</span>
+            <button id="ssp-close">×</button>
         </div>
+        <div id="ssp-stops"></div>
+    </div>
+</div>
 
+<!-- Hover-Tooltip -->
+<div id="stationinfo" class="stationinfo" style="display:none;"></div>
 
-    <!-- Hover-Tooltip -->
-    <div id="stationinfo" class="stationinfo" style="display:none;"></div>
-
-    <!-- Popup für Schematische Karte -->
-    <div id="schematic-popup-overlay">
-        <div id="schematic-popup">
-            <button id="schematic-popup-close">×</button>
-            <div id="schematic-popup-header">
-                <span id="schematic-popup-badge"></span>
-                <span id="schematic-popup-dest"></span>
-                <span id="schematic-popup-delay"></span>
+<!-- Verbessertes Popup für Schematische Karte -->
+<div id="schematic-popup-overlay">
+    <div id="schematic-popup">
+        <button id="schematic-popup-close">×</button>
+        <div id="schematic-popup-header">
+            <span id="schematic-popup-badge"></span>
+            <span id="schematic-popup-dest"></span>
+            <span id="schematic-popup-delay"></span>
+        </div>
+        <div id="schematic-popup-body">
+            <div id="schematic-popup-next"></div>
+            <div class="popup-btn-row">
+                <button class="popup-btn" id="popup-btn-track" style="background:#2c3e50;color:white;">⊙ Verfolgen</button>
+                <button class="popup-btn" id="popup-btn-route" style="background:#27ae60;color:white;">≡ Route & Halte</button>
             </div>
-            <div id="schematic-popup-body">
-                <div id="schematic-popup-next"></div>
-                <div class="popup-btn-row">
-                    <button class="popup-btn" id="popup-btn-track">⊙ Verfolgen</button>
-                    <button class="popup-btn" id="popup-btn-route">≡ Route & Halte</button>
-                </div>
-                <div id="schematic-popup-stops">
-                    <div class="popup-loading">Lade Halteinfos…</div>
-                </div>
+            <div id="schematic-popup-stops">
+                <div class="popup-loading">Lade Halteinfos…</div>
             </div>
         </div>
     </div>
+</div>
 
-    <hr>
-    <br>
-    <div class="footer">
-        <a href="imp">Impressum</a>
-        <a href="Datenschutzerklaerung">Datenschutzerklärung</a>
-    </div>
-    <br>
-
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════
 // GLOBALER ZUSTAND
@@ -455,7 +477,7 @@ let isDarkMode=false, lightTileLayer=null, darkTileLayer=null;
 document.getElementById('darkmode-toggle').addEventListener('click', function() {
     isDarkMode=!isDarkMode;
     document.body.classList.toggle('dark-mode',isDarkMode);
-    this.textContent=isDarkMode?' Light Mode':' Dark Mode';
+    this.textContent=isDarkMode?'☀️ Light Mode':'🌙 Dark Mode';
     this.classList.toggle('active',isDarkMode);
     if (leafletMap) {
         if (isDarkMode){if(lightTileLayer)leafletMap.removeLayer(lightTileLayer);if(!darkTileLayer)darkTileLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM contributors © CARTO',subdomains:'abcd',maxZoom:19});darkTileLayer.addTo(leafletMap);}
