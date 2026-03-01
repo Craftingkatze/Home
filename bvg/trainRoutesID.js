@@ -1,5 +1,4 @@
-[file name]: trainRoutes.js
-[file content begin]
+
 const u1Points = [
                 { x: 503, y: 595, xr: 52.5025, yr: 13.325556, route: "u1", station: "Uhlandstraße", id: "070001000601" },
                 { x: 536.45, y: 595, xr: 52.5033335, yr: 13.329306, route: "u1", station: "Zwischen Uhlandstr. und Kurfürstendamm", id: "--Keine-ID--" },
