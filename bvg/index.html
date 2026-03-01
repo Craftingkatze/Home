@@ -56,34 +56,61 @@
         }
         #line-toggle-container label { font-size: 13px; cursor: pointer; }
 
-        #svg-container { overflow: hidden; width: 100%; background: white; position: relative; }
+        /* ── SVG-Container & Vollbild ─────────────────────────────────────── */
+        #svg-container {
+            overflow: hidden; width: 100%; background: white; position: relative;
+            /* Kein fester height – SVG bestimmt die Höhe */
+        }
         #svg-container svg { border: 1px solid #ccc; width: 100%; display: block; }
+        body.dark-mode #svg-container { background: #1a1a2e; }
 
+        /* Im Vollbild: Container füllt alles, SVG füllt Container */
         #svg-container:fullscreen,
         #svg-container:-webkit-full-screen,
         #svg-container:-moz-full-screen {
-            background-color: white; width: 100vw !important; height: 100vh !important; overflow: hidden;
+            background-color: white;
+            width: 100vw !important;
+            height: 100vh !important;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        body.dark-mode #svg-container:fullscreen,
+        body.dark-mode #svg-container:-webkit-full-screen {
+            background-color: #1a1a2e;
         }
         #svg-container:fullscreen svg,
         #svg-container:-webkit-full-screen svg,
-        #svg-container:-moz-full-screen svg { width: 100% !important; height: 100% !important; }
+        #svg-container:-moz-full-screen svg {
+            width: 100% !important;
+            height: 100% !important;
+            flex: 1;
+            min-height: 0;
+        }
         ::backdrop { background-color: white; }
 
+        /* ── Zoom-Buttons ────────────────────────────────────────────────── */
+        /* Normal: fixed am rechten Rand */
         #zoom-controls {
             position: fixed; bottom: 20px; right: 20px;
             display: flex; flex-direction: column; gap: 6px; z-index: 999;
         }
+        /* Vollbild: absolute innerhalb des Containers */
         #svg-container:fullscreen #zoom-controls,
         #svg-container:-webkit-full-screen #zoom-controls,
-        #svg-container:-moz-full-screen #zoom-controls { position: absolute; bottom: 20px; right: 20px; }
+        #svg-container:-moz-full-screen #zoom-controls {
+            position: absolute; bottom: 20px; right: 20px;
+        }
         .zoom-btn {
             width: 38px; height: 38px; font-size: 22px;
             background: #2c3e50; color: white; border: none; border-radius: 6px;
             cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
         }
         .zoom-btn:hover { background: #3d5166; }
 
+        /* ── Leaflet ─────────────────────────────────────────────────────── */
         #leaflet-container { display: none; width: 100%; height: 85vh; position: relative; overflow: hidden; }
         #leaflet-map { width: 100%; height: 100%; }
 
@@ -134,6 +161,7 @@
         }
         #stop-tracking-btn:hover { background: #a93226; }
 
+        /* ── Perlenschnur-Panel ───────────────────────────────────────────── */
         #stop-sequence-panel {
             position: absolute; top: 0; right: 0; bottom: 0; z-index: 1000;
             width: 260px; background: rgba(255,255,255,0.97);
@@ -143,7 +171,6 @@
         }
         #stop-sequence-panel.open { transform: translateX(0); }
         body.dark-mode #stop-sequence-panel { background: rgba(18,24,34,0.98); border-color: #333; }
-
         #ssp-header {
             padding: 12px 14px 8px; border-bottom: 1px solid #eee;
             display: flex; align-items: center; gap: 8px; flex-shrink: 0;
@@ -155,7 +182,6 @@
         #ssp-close { background: none; border: none; font-size: 18px; cursor: pointer; color: #888; padding: 0 2px; line-height: 1; }
         #ssp-close:hover { color: #333; }
         #ssp-stops { flex: 1; padding: 8px 0; overflow-y: auto; }
-
         .ssp-stop { display: flex; align-items: flex-start; gap: 0; padding: 2px 14px 2px 0; position: relative; cursor: default; }
         .ssp-stop.is-next { background: rgba(243,121,29,0.07); }
         .ssp-line-col { width: 32px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
@@ -188,6 +214,7 @@
             50%      { box-shadow: 0 2px 16px rgba(192,57,43,0.8); }
         }
 
+        /* ── Hover-Tooltip ───────────────────────────────────────────────── */
         .stationinfo {
             position: fixed; background: rgba(255,255,255,0.97); color: #222;
             padding: 7px 12px; border-radius: 6px; pointer-events: none;
@@ -196,6 +223,91 @@
             border-left: 3px solid #f3791d; border: 1px solid #ddd;
         }
         body.dark-mode .stationinfo { background: rgba(22,28,38,0.97); color: white; border-color: #444; }
+
+        /* ── Schematisches Detail-Popup ──────────────────────────────────── */
+        #schematic-popup-overlay {
+            display: none;
+            position: fixed; inset: 0; z-index: 10000;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(2px);
+            align-items: center; justify-content: center;
+        }
+        #schematic-popup-overlay.visible {
+            display: flex;
+        }
+        #schematic-popup {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+            min-width: 280px; max-width: 340px; width: 90vw;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            position: relative;
+            animation: popup-in .18s ease;
+        }
+        @keyframes popup-in {
+            from { transform: scale(0.88); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        body.dark-mode #schematic-popup { background: #1a2232; color: #ddd; }
+        #schematic-popup-close {
+            position: absolute; top: 8px; right: 10px;
+            background: none; border: none; font-size: 20px;
+            cursor: pointer; color: rgba(255,255,255,0.7); z-index: 1;
+            line-height: 1;
+        }
+        #schematic-popup-close:hover { color: #fff; }
+        #schematic-popup-header {
+            padding: 12px 16px 10px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        #schematic-popup-badge {
+            padding: 4px 12px; border-radius: 10px;
+            font-weight: 900; font-size: 16px; letter-spacing: .04em;
+            flex-shrink: 0;
+        }
+        #schematic-popup-dest {
+            font-weight: bold; font-size: 13px; flex: 1;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            color: rgba(255,255,255,0.9);
+        }
+        #schematic-popup-delay {
+            font-size: 11px; opacity: .85; flex-shrink: 0; font-weight: 600;
+        }
+        #schematic-popup-body { padding: 12px 16px 14px; }
+        #schematic-popup-next {
+            font-size: 12px; color: #666; margin-bottom: 10px;
+        }
+        body.dark-mode #schematic-popup-next { color: #aaa; }
+        #schematic-popup-next strong { color: #222; }
+        body.dark-mode #schematic-popup-next strong { color: #fff; }
+        .popup-btn-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .popup-btn {
+            flex: 1; padding: 8px 6px; border: none; border-radius: 7px;
+            cursor: pointer; font-size: 12px; font-weight: 700;
+            transition: opacity .15s;
+        }
+        .popup-btn:hover { opacity: .85; }
+        #schematic-popup-stops {
+            border-top: 1px solid #eee; padding-top: 10px;
+        }
+        body.dark-mode #schematic-popup-stops { border-color: #2a3a4a; }
+        .popup-stop-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 0; font-size: 12px;
+        }
+        .popup-stop-label {
+            font-size: 9px; text-transform: uppercase; letter-spacing: .06em;
+            color: #999; width: 68px; flex-shrink: 0; text-align: right;
+        }
+        .popup-stop-name { font-weight: 600; flex: 1; color: #222; }
+        body.dark-mode .popup-stop-name { color: #ddd; }
+        .popup-stop-time { font-size: 11px; color: #888; flex-shrink: 0; }
+        .popup-loading {
+            text-align: center; color: #999; padding: 12px 0; font-size: 12px;
+        }
+        .popup-error { text-align: center; color: #c0392b; padding: 8px 0; font-size: 12px; }
 
         .U1{color:#7dad4c} .U2{color:#da421e} .U3{color:#16683d}
         .U4{color:#f0d722} .U5{color:#7e5330} .U6{color:#8c6dab}
@@ -235,6 +347,7 @@
     <label><input type="checkbox" class="line-toggle" value="U9" checked> U9</label>
 </div>
 
+<!-- Schematische Karte -->
 <div id="svg-container">
     <div id="zoom-controls">
         <button class="zoom-btn" id="zoom-in">+</button>
@@ -243,6 +356,7 @@
     </div>
 </div>
 
+<!-- Echte Karte -->
 <div id="leaflet-container">
     <div id="leaflet-map"></div>
     <div id="leaflet-legend">
@@ -262,7 +376,6 @@
     <button id="locate-btn" title="Mein Standort">📍</button>
     <button id="stop-tracking-btn">✕ Tracking beenden</button>
     <div id="tracking-badge" title="Tracking aktiv – klicken zum Beenden">⊙ Tracking</div>
-
     <div id="stop-sequence-panel">
         <div id="ssp-header">
             <span id="ssp-line-badge">–</span>
@@ -273,7 +386,30 @@
     </div>
 </div>
 
+<!-- Hover-Tooltip -->
 <div id="stationinfo" class="stationinfo" style="display:none;"></div>
+
+<!-- Verbessertes Popup für Schematische Karte -->
+<div id="schematic-popup-overlay">
+    <div id="schematic-popup">
+        <button id="schematic-popup-close">×</button>
+        <div id="schematic-popup-header">
+            <span id="schematic-popup-badge"></span>
+            <span id="schematic-popup-dest"></span>
+            <span id="schematic-popup-delay"></span>
+        </div>
+        <div id="schematic-popup-body">
+            <div id="schematic-popup-next"></div>
+            <div class="popup-btn-row">
+                <button class="popup-btn" id="popup-btn-track" style="background:#2c3e50;color:white;">⊙ Verfolgen</button>
+                <button class="popup-btn" id="popup-btn-route" style="background:#27ae60;color:white;">≡ Route & Halte</button>
+            </div>
+            <div id="schematic-popup-stops">
+                <div class="popup-loading">Lade Halteinfos…</div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
@@ -302,12 +438,14 @@ let tripStopoverCache = {};
 let currentMapMode = 'schematic';
 let visibleLines = {U1:true,U2:true,U3:true,U4:true,U5:true,U6:true,U7:true,U8:true,U9:true};
 
+// Aktuell im Popup gezeigter Zug
+let popupCurrentUid = null;
+
 const lineColors = {
     U1:'#7dad4c', U2:'#da421e', U3:'#16683d', U4:'#f0d722',
     U5:'#7e5330', U6:'#8c6dab', U7:'#009bd5', U8:'#224f86',
     U9:'#f3791d'
 };
-
 const lineOffsets = {
     U1:{dx:8.8,dy:8.2}, U2:{dx:8.8,dy:8.2}, U3:{dx:8.8,dy:8.2}, U4:{dx:8.8,dy:8.2},
     U5:{dx:8.8,dy:8.2}, U6:{dx:8.8,dy:8.2}, U7:{dx:8.8,dy:8.2}, U8:{dx:36.8,dy:8.2},
@@ -315,64 +453,53 @@ const lineOffsets = {
 };
 
 function getBgColor(v) {
-    const pn = (v.line?.productName||'').toUpperCase(), name = v.line?.name||'';
+    const pn=(v.line?.productName||'').toUpperCase(), name=v.line?.name||'';
     if (v.line?.color?.bg) return v.line.color.bg;
     if (lineColors[name]) return lineColors[name];
-    switch(pn) {
-        case 'U': return '#115D91'; case 'S': return '#008D4F';
-        case 'TRAM': return '#BE1414'; case 'BUS': return '#95276E';
-        case 'FERRY': return '#528DBA'; default: return '#555';
-    }
+    switch(pn){case 'U':return '#115D91';case 'S':return '#008D4F';case 'TRAM':return '#BE1414';case 'BUS':return '#95276E';case 'FERRY':return '#528DBA';default:return '#555';}
 }
-
 function getTextColor(hex) {
-    if (!hex || hex[0] !== '#') return '#fff';
-    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
-    return (0.299*r + 0.587*g + 0.114*b) > 180 ? '#222' : '#fff';
+    if (!hex||hex[0]!=='#') return '#fff';
+    const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    return (0.299*r+0.587*g+0.114*b)>180?'#222':'#fff';
+}
+function fmtTime(iso, delay) {
+    if (!iso) return '';
+    const d=new Date(iso), hh=d.getHours().toString().padStart(2,'0'), mm=d.getMinutes().toString().padStart(2,'0');
+    const dm=Math.round((delay||0)/60), col=dm>0?'#c0392b':'#27ae60';
+    return `${hh}:${mm}${dm!==0?` <span style="color:${col};font-weight:bold">${dm>=0?'+':''}${dm}</span>`:''}`;
 }
 
 // ═══════════════════════════════════════════════════════
 // DARK MODE
 // ═══════════════════════════════════════════════════════
-let isDarkMode = false, lightTileLayer = null, darkTileLayer = null;
-
+let isDarkMode=false, lightTileLayer=null, darkTileLayer=null;
 document.getElementById('darkmode-toggle').addEventListener('click', function() {
-    isDarkMode = !isDarkMode;
-    document.body.classList.toggle('dark-mode', isDarkMode);
-    this.textContent = isDarkMode ? 'Light Mode' : '🌙 Dark Mode';
-    this.classList.toggle('active', isDarkMode);
+    isDarkMode=!isDarkMode;
+    document.body.classList.toggle('dark-mode',isDarkMode);
+    this.textContent=isDarkMode?'☀️ Light Mode':'🌙 Dark Mode';
+    this.classList.toggle('active',isDarkMode);
     if (leafletMap) {
-        if (isDarkMode) {
-            if (lightTileLayer) leafletMap.removeLayer(lightTileLayer);
-            if (!darkTileLayer) darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {attribution:'© OpenStreetMap contributors © CARTO',subdomains:'abcd',maxZoom:19});
-            darkTileLayer.addTo(leafletMap);
-        } else {
-            if (darkTileLayer) leafletMap.removeLayer(darkTileLayer);
-            if (!lightTileLayer) lightTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap contributors',maxZoom:19});
-            lightTileLayer.addTo(leafletMap);
-        }
-        Object.values(stationLayers).forEach(grp => grp.eachLayer(l => { if (l.setStyle) l.setStyle({fillColor: isDarkMode ? '#1a1a2e' : '#ffffff'}); }));
+        if (isDarkMode){if(lightTileLayer)leafletMap.removeLayer(lightTileLayer);if(!darkTileLayer)darkTileLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM contributors © CARTO',subdomains:'abcd',maxZoom:19});darkTileLayer.addTo(leafletMap);}
+        else{if(darkTileLayer)leafletMap.removeLayer(darkTileLayer);if(!lightTileLayer)lightTileLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19});lightTileLayer.addTo(leafletMap);}
+        Object.values(stationLayers).forEach(grp=>grp.eachLayer(l=>{if(l.setStyle)l.setStyle({fillColor:isDarkMode?'#1a1a2e':'#ffffff'});}));
     }
 });
 
 // ═══════════════════════════════════════════════════════
 // MODUS
 // ═══════════════════════════════════════════════════════
-document.getElementById('mode-schematic').addEventListener('click', () => switchMode('schematic'));
-document.getElementById('mode-real').addEventListener('click',      () => switchMode('real'));
-
+document.getElementById('mode-schematic').addEventListener('click',()=>switchMode('schematic'));
+document.getElementById('mode-real').addEventListener('click',()=>switchMode('real'));
 function switchMode(mode) {
-    currentMapMode = mode;
-    document.getElementById('mode-schematic').classList.toggle('active', mode==='schematic');
-    document.getElementById('mode-real').classList.toggle('active',      mode==='real');
-    document.getElementById('svg-container').style.display     = mode==='schematic' ? 'block' : 'none';
-    document.getElementById('zoom-controls').style.display     = mode==='schematic' ? 'flex'  : 'none';
-    document.getElementById('leaflet-container').style.display = mode==='real'      ? 'block' : 'none';
-    document.getElementById('fullscreen-toggle').style.display = mode==='schematic' ? ''      : 'none';
-    if (mode === 'real') {
-        initLeaflet();
-        setTimeout(() => { leafletMap && leafletMap.invalidateSize(); if (lastMovements.length) updateLeafletTrains(lastMovements); }, 200);
-    }
+    currentMapMode=mode;
+    document.getElementById('mode-schematic').classList.toggle('active',mode==='schematic');
+    document.getElementById('mode-real').classList.toggle('active',mode==='real');
+    document.getElementById('svg-container').style.display=mode==='schematic'?'block':'none';
+    document.getElementById('zoom-controls').style.display=mode==='schematic'?'flex':'none';
+    document.getElementById('leaflet-container').style.display=mode==='real'?'block':'none';
+    document.getElementById('fullscreen-toggle').style.display=mode==='schematic'?'':'none';
+    if (mode==='real'){initLeaflet();setTimeout(()=>{leafletMap&&leafletMap.invalidateSize();if(lastMovements.length)updateLeafletTrains(lastMovements);},200);}
     updateTrainCount();
 }
 
@@ -381,177 +508,339 @@ function switchMode(mode) {
 // ═══════════════════════════════════════════════════════
 function initLeaflet() {
     if (leafletMap) return;
-    leafletMap = L.map('leaflet-map', {zoomControl:true}).setView([52.520, 13.405], 12);
-    lightTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom:19
-    }).addTo(leafletMap);
-
-    const linesData = {
-        U1:typeof u1Points!=='undefined'?u1Points:[], U2:typeof u2Points!=='undefined'?u2Points:[],
-        U3:typeof u3Points!=='undefined'?u3Points:[], U4:typeof u4Points!=='undefined'?u4Points:[],
-        U5:typeof u5Points!=='undefined'?u5Points:[], U6:typeof u6Points!=='undefined'?u6Points:[],
-        U7:typeof u7Points!=='undefined'?u7Points:[], U8:typeof u8Points!=='undefined'?u8Points:[],
-        U9:typeof u9Points!=='undefined'?u9Points:[], U12:typeof u12Points!=='undefined'?u12Points:[]
-    };
-    stationLayers = {};
-    Object.entries(linesData).forEach(([line, pts]) => {
-        const group = L.layerGroup();
-        pts.forEach(p => {
-            if (!p.station || !p.xr || !p.yr) return;
-            L.circleMarker([p.xr, p.yr], {radius:4, color:lineColors[line]||'#aaa', fillColor:'#ffffff', fillOpacity:1, weight:2})
-             .addTo(group).bindPopup(`<div style="font-family:Arial;font-size:13px"><b>${p.station}</b><br><span style="color:${lineColors[line]};font-weight:800">${line}</span></div>`);
-        });
-        stationLayers[line] = group;
-        if (stationsVisible) group.addTo(leafletMap);
+    leafletMap=L.map('leaflet-map',{zoomControl:true}).setView([52.520,13.405],12);
+    lightTileLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',maxZoom:19}).addTo(leafletMap);
+    const linesData={U1:typeof u1Points!=='undefined'?u1Points:[],U2:typeof u2Points!=='undefined'?u2Points:[],U3:typeof u3Points!=='undefined'?u3Points:[],U4:typeof u4Points!=='undefined'?u4Points:[],U5:typeof u5Points!=='undefined'?u5Points:[],U6:typeof u6Points!=='undefined'?u6Points:[],U7:typeof u7Points!=='undefined'?u7Points:[],U8:typeof u8Points!=='undefined'?u8Points:[],U9:typeof u9Points!=='undefined'?u9Points:[],U12:typeof u12Points!=='undefined'?u12Points:[]};
+    stationLayers={};
+    Object.entries(linesData).forEach(([line,pts])=>{
+        const group=L.layerGroup();
+        pts.forEach(p=>{if(!p.station||!p.xr||!p.yr)return;L.circleMarker([p.xr,p.yr],{radius:4,color:lineColors[line]||'#aaa',fillColor:'#ffffff',fillOpacity:1,weight:2}).addTo(group).bindPopup(`<div style="font-family:Arial;font-size:13px"><b>${p.station}</b><br><span style="color:${lineColors[line]};font-weight:800">${line}</span></div>`);});
+        stationLayers[line]=group; if(stationsVisible)group.addTo(leafletMap);
     });
-
-    document.getElementById('toggle-stations-btn').addEventListener('click', function() {
-        stationsVisible = !stationsVisible;
-        this.textContent = stationsVisible ? '🚉 Stationen ausblenden' : '🚉 Stationen anzeigen';
-        Object.values(stationLayers).forEach(g => stationsVisible ? g.addTo(leafletMap) : leafletMap.removeLayer(g));
-    });
-    document.getElementById('locate-btn').addEventListener('click', () => {
-        if (userMarker) leafletMap.setView(userMarker.getLatLng(), 15, {animate:true});
-        else navigator.geolocation?.getCurrentPosition(p => leafletMap.setView([p.coords.latitude, p.coords.longitude], 15, {animate:true}));
-    });
+    document.getElementById('toggle-stations-btn').addEventListener('click',function(){stationsVisible=!stationsVisible;this.textContent=stationsVisible?'🚉 Stationen ausblenden':'🚉 Stationen anzeigen';Object.values(stationLayers).forEach(g=>stationsVisible?g.addTo(leafletMap):leafletMap.removeLayer(g));});
+    document.getElementById('locate-btn').addEventListener('click',()=>{if(userMarker)leafletMap.setView(userMarker.getLatLng(),15,{animate:true});else navigator.geolocation?.getCurrentPosition(p=>leafletMap.setView([p.coords.latitude,p.coords.longitude],15,{animate:true}));});
     startGeoWatch();
 }
-
 function startGeoWatch() {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.watchPosition(pos => {
-        const {latitude:lat, longitude:lng} = pos.coords;
-        const icon = L.divIcon({html:'<div style="width:12px;height:12px;background:#e74c3c;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(231,76,60,0.9)"></div>',className:'',iconSize:[12,12],iconAnchor:[6,6]});
-        if (!userMarker) userMarker = L.marker([lat,lng],{icon}).addTo(leafletMap).bindPopup('📍 Dein Standort');
+    if(!navigator.geolocation)return;
+    navigator.geolocation.watchPosition(pos=>{
+        const{latitude:lat,longitude:lng}=pos.coords;
+        const icon=L.divIcon({html:'<div style="width:12px;height:12px;background:#e74c3c;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(231,76,60,0.9)"></div>',className:'',iconSize:[12,12],iconAnchor:[6,6]});
+        if(!userMarker)userMarker=L.marker([lat,lng],{icon}).addTo(leafletMap).bindPopup('📍 Dein Standort');
         else userMarker.setLatLng([lat,lng]);
-    }, null, {enableHighAccuracy:true});
+    },null,{enableHighAccuracy:true});
 }
 
 function updateLeafletTrains(movements) {
-    if (!leafletMap) return;
-    const seen = new Set();
-    movements.forEach(v => {
-        if (!v.location || !v.line?.name || !v.tripId) return;
-        const line=v.line.name, pn=v.line.productName||'', id=v.tripId;
-        if (pn==='U' && !visibleLines[line]) return;
+    if(!leafletMap)return;
+    const seen=new Set();
+    movements.forEach(v=>{
+        if(!v.location||!v.line?.name||!v.tripId)return;
+        const line=v.line.name,pn=v.line.productName||'',id=v.tripId;
+        if(pn==='U'&&!visibleLines[line])return;
         seen.add(id);
-        const lat=v.location.latitude, lng=v.location.longitude, dest=v.direction||'',
-              delayMin=v.delay ? Math.round(v.delay/60) : 0, bg=getBgColor(v), fg=getTextColor(bg);
-        if (leafletMarkers[id]) {
-            leafletMarkers[id].marker.setLatLng([lat,lng]);
-            leafletMarkers[id].delay = delayMin;
-            if (trackedTripId===id && leafletMap) leafletMap.panTo([lat,lng],{animate:true,duration:0.8});
-        } else {
-            const divIcon = L.divIcon({html:`<div class="vbb-marker" style="background:${bg};color:${fg}">${line}</div>`,className:'',iconAnchor:[18,10]});
-            const marker = L.marker([lat,lng],{icon:divIcon, zIndexOffset:pn==='U'?200:(pn==='S'?100:0)})
+        const lat=v.location.latitude,lng=v.location.longitude,dest=v.direction||'',delayMin=v.delay?Math.round(v.delay/60):0,bg=getBgColor(v),fg=getTextColor(bg);
+        if(leafletMarkers[id]){
+            leafletMarkers[id].marker.setLatLng([lat,lng]);leafletMarkers[id].delay=delayMin;
+            if(trackedTripId===id&&leafletMap)leafletMap.panTo([lat,lng],{animate:true,duration:0.8});
+        }else{
+            const divIcon=L.divIcon({html:`<div class="vbb-marker" style="background:${bg};color:${fg}">${line}</div>`,className:'',iconAnchor:[18,10]});
+            const marker=L.marker([lat,lng],{icon:divIcon,zIndexOffset:pn==='U'?200:(pn==='S'?100:0)})
                 .addTo(leafletMap)
-                .bindPopup(`<div style="font-family:Arial,sans-serif;min-width:200px;font-size:13px"><div style="background:${bg};color:${fg};padding:5px 11px;border-radius:5px;font-weight:900;font-size:15px;margin-bottom:8px">${line}</div>${dest?`<div style="margin-bottom:6px;font-weight:bold">→ ${dest}</div>`:''}<div style="color:#888;font-size:11px;text-align:center;padding:8px 0">Lade Halteinfos…</div></div>`,{offset:[0,-6],maxWidth:280});
-            marker.on('popupopen', () => { const info=leafletMarkers[id]; if (info) fetchTripDetails(id,line,dest,bg,fg,info.delay); });
-            leafletMarkers[id] = {marker, line, productName:pn, dest, delay:delayMin, bg, fg};
+                .bindPopup(buildLeafletPopupHtml(line,dest,bg,fg,delayMin,id,false),{offset:[0,-6],maxWidth:300,className:'bvg-popup'});
+            marker.on('popupopen',()=>{const info=leafletMarkers[id];if(info)fetchTripDetails(id,line,dest,bg,fg,info.delay);});
+            leafletMarkers[id]={marker,line,productName:pn,dest,delay:delayMin,bg,fg};
         }
     });
-    Object.keys(leafletMarkers).forEach(id => { if (!seen.has(id)) { leafletMap.removeLayer(leafletMarkers[id].marker); delete leafletMarkers[id]; } });
+    Object.keys(leafletMarkers).forEach(id=>{if(!seen.has(id)){leafletMap.removeLayer(leafletMarkers[id].marker);delete leafletMarkers[id];}});
+}
+
+function buildLeafletPopupHtml(line, dest, bg, fg, delayMin, tripId, isTracking, prevStop, nextStop) {
+    const delayStr=delayMin>0?`+${delayMin} Min`:delayMin<0?`${delayMin} Min`:null;
+    return `<div style="font-family:Arial,sans-serif;min-width:230px;font-size:13px;line-height:1.5">
+        <div style="background:${bg};color:${fg};padding:8px 12px;border-radius:8px 8px 0 0;margin:-1px -1px 0;font-weight:900;font-size:15px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center">
+            <span>${line}</span>
+            ${delayStr?`<span style="font-size:11px;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:8px">${delayStr}</span>`:''}
+        </div>
+        <div style="padding:10px 12px">
+            ${dest?`<div style="margin-bottom:8px;font-weight:600;color:#444">→ ${dest}</div>`:''}
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+                <button onclick="toggleTracking('${tripId}')" style="flex:1;padding:6px 4px;border:none;border-radius:6px;cursor:pointer;font-size:11px;background:${isTracking?'#c0392b':'#2c3e50'};color:white;font-weight:700">${isTracking?'✕ Stop':'⊙ Verfolgen'}</button>
+                <button onclick="toggleRouteAndPanel('${tripId}','${line}','${bg}','${fg}')" style="flex:1;padding:6px 4px;border:none;border-radius:6px;cursor:pointer;font-size:11px;background:#27ae60;color:white;font-weight:700">≡ Route & Halte</button>
+            </div>
+            ${prevStop||nextStop ? `<hr style="border:none;border-top:1px solid #eee;margin:0 0 8px">` : ''}
+            ${prevStop?`
+            <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#aaa;width:52px;padding-top:2px;text-align:right;flex-shrink:0">Vorher</div>
+                <div>
+                    <div style="font-weight:600;color:#555">${prevStop.name}</div>
+                    <div style="font-size:11px;color:#999">${fmtTime(prevStop.dep,prevStop.delay)}</div>
+                </div>
+            </div>`:''}
+            ${nextStop?`
+            <div style="display:flex;gap:8px;align-items:flex-start">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#f3791d;width:52px;padding-top:2px;text-align:right;flex-shrink:0;font-weight:700">Nächste</div>
+                <div>
+                    <div style="font-weight:700;color:#222">${nextStop.name}</div>
+                    <div style="font-size:11px;color:#888">${fmtTime(nextStop.dep,nextStop.delay)}</div>
+                </div>
+            </div>`:`<div style="color:#aaa;font-size:11px;text-align:center;padding:6px 0">Endstation erreicht</div>`}
+        </div>
+    </div>`;
 }
 
 async function fetchTripDetails(tripId, line, dest, bg, fg, delayMin) {
-    const info = leafletMarkers[tripId]; if (!info) return;
-    try {
-        let stopovers = tripStopoverCache[tripId];
-        if (!stopovers) {
-            const res = await fetch(`https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`);
-            const data = await res.json(); const trip = data.trip||data;
-            stopovers = trip.stopovers||trip.stopSequence||[]; tripStopoverCache[tripId] = stopovers;
+    const info=leafletMarkers[tripId]; if(!info)return;
+    try{
+        let stopovers=tripStopoverCache[tripId];
+        if(!stopovers){
+            const res=await fetch(`https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`);
+            const data=await res.json(); const trip=data.trip||data;
+            stopovers=trip.stopovers||trip.stopSequence||[]; tripStopoverCache[tripId]=stopovers;
         }
-        const now = Date.now(); let prevIdx=-1, nextIdx=-1;
-        for (let i=0; i<stopovers.length; i++) { const dep=stopovers[i].departure?new Date(stopovers[i].departure).getTime():null; if (dep&&dep>now){nextIdx=i;prevIdx=i-1;break;} }
-        if (nextIdx===-1) { prevIdx=stopovers.length-2; nextIdx=stopovers.length-1; }
-        function fmtTime(iso,delay) { if(!iso)return ''; const d=new Date(iso),hh=d.getHours().toString().padStart(2,'0'),mm=d.getMinutes().toString().padStart(2,'0'),dm=Math.round((delay||0)/60),col=dm>0?'#c0392b':'#27ae60'; return `${hh}:${mm} <span style="color:${col};font-weight:bold">${dm>=0?'+':''}${dm}</span>`; }
-        const prevStop=prevIdx>=0?stopovers[prevIdx]:null, nextStop=nextIdx>=0?stopovers[nextIdx]:null,
-              delayStr=delayMin>0?`+${delayMin} Min`:delayMin<0?`${delayMin} Min`:'+0', isTracking=trackedTripId===tripId;
-        const html = `<div style="font-family:Arial,sans-serif;min-width:220px;font-size:13px;line-height:1.5"><div style="background:${bg};color:${fg};padding:6px 12px;border-radius:6px;font-weight:900;font-size:15px;margin-bottom:8px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center"><span>${line}</span>${delayMin!==0?`<span style="font-size:11px;opacity:.9">${delayStr}</span>`:''}</div>${dest?`<div style="margin-bottom:8px;font-weight:bold;font-size:13px">→ ${dest}</div>`:''}<div style="display:flex;gap:6px;margin-bottom:8px"><button onclick="toggleTracking('${tripId}')" style="flex:1;padding:5px 8px;border:none;border-radius:5px;cursor:pointer;font-size:12px;background:${isTracking?'#c0392b':'#2c3e50'};color:white;font-weight:600">${isTracking?'✕ Tracking stoppen':'⊙ Fahrzeug verfolgen'}</button><button onclick="toggleRouteAndPanel('${tripId}','${line}','${bg}','${fg}')" style="flex:1;padding:5px 8px;border:none;border-radius:5px;cursor:pointer;font-size:12px;background:#27ae60;color:white;font-weight:600">≡ Route & Halte</button></div><hr style="border:none;border-top:1px solid #ddd;margin:6px 0">${prevStop?`<div style="margin-bottom:6px"><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em">Vorheriger Halt</div><div style="font-weight:bold">${prevStop.stop?.name||'?'}</div><div style="font-size:12px;color:#555">${fmtTime(prevStop.departure||prevStop.arrival,prevStop.departureDelay||prevStop.arrivalDelay||0)}</div></div>`:''} ${nextStop?`<div><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em">Nächster Halt</div><div style="font-weight:bold">${nextStop.stop?.name||'?'}</div><div style="font-size:12px;color:#555">${fmtTime(nextStop.departure||nextStop.arrival,nextStop.departureDelay||nextStop.arrivalDelay||0)}</div></div>`:`<div style="color:#888;font-size:12px">Endstation erreicht</div>`}</div>`;
-        if (info.marker.isPopupOpen()) info.marker.getPopup().setContent(html);
-        if (trackedTripId===tripId) updateStopPanel(tripId,line,dest,bg,fg,stopovers,nextIdx);
-    } catch(e) { console.warn('Trip-Details Fehler:',e); }
+        const now=Date.now(); let prevIdx=-1,nextIdx=-1;
+        for(let i=0;i<stopovers.length;i++){const dep=stopovers[i].departure?new Date(stopovers[i].departure).getTime():null;if(dep&&dep>now){nextIdx=i;prevIdx=i-1;break;}}
+        if(nextIdx===-1){prevIdx=stopovers.length-2;nextIdx=stopovers.length-1;}
+        const ps=prevIdx>=0?stopovers[prevIdx]:null, ns=nextIdx>=0?stopovers[nextIdx]:null;
+        const prevStop=ps?{name:ps.stop?.name||'?',dep:ps.departure||ps.arrival,delay:ps.departureDelay||ps.arrivalDelay||0}:null;
+        const nextStop=ns?{name:ns.stop?.name||'?',dep:ns.departure||ns.arrival,delay:ns.departureDelay||ns.arrivalDelay||0}:null;
+        const isTracking=trackedTripId===tripId;
+        if(info.marker.isPopupOpen()){
+            info.marker.getPopup().setContent(buildLeafletPopupHtml(line,dest,bg,fg,delayMin,tripId,isTracking,prevStop,nextStop));
+        }
+        if(trackedTripId===tripId)updateStopPanel(tripId,line,dest,bg,fg,stopovers,nextIdx);
+    }catch(e){console.warn('Trip-Details Fehler:',e);}
 }
 
-function toggleTracking(tripId) {
-    if (trackedTripId===tripId) stopTracking(); else startTracking(tripId);
-    const info=leafletMarkers[tripId]; if (info){info.marker.closePopup();info.marker.openPopup();}
+function toggleTracking(tripId){
+    if(trackedTripId===tripId)stopTracking();else startTracking(tripId);
+    const info=leafletMarkers[tripId];if(info){info.marker.closePopup();info.marker.openPopup();}
 }
-function startTracking(tripId) {
+function startTracking(tripId){
     trackedTripId=tripId; const info=leafletMarkers[tripId];
     document.getElementById('tracking-badge').style.display='block';
     document.getElementById('tracking-badge').textContent=`⊙ ${info?.line||''} wird verfolgt`;
     document.getElementById('stop-tracking-btn').style.display='block';
-    if (info?.marker && leafletMap) leafletMap.setView(info.marker.getLatLng(),14,{animate:true});
+    if(info?.marker&&leafletMap)leafletMap.setView(info.marker.getLatLng(),14,{animate:true});
 }
-function stopTracking() {
+function stopTracking(){
     trackedTripId=null;
     document.getElementById('tracking-badge').style.display='none';
     document.getElementById('stop-tracking-btn').style.display='none';
 }
-document.getElementById('tracking-badge').addEventListener('click', stopTracking);
-document.getElementById('stop-tracking-btn').addEventListener('click', stopTracking);
+document.getElementById('tracking-badge').addEventListener('click',stopTracking);
+document.getElementById('stop-tracking-btn').addEventListener('click',stopTracking);
 
-async function toggleRouteAndPanel(tripId, line, bg, fg) {
-    const panel = document.getElementById('stop-sequence-panel');
-    if (panel.classList.contains('open') && panel.dataset.tripId===tripId) { panel.classList.remove('open'); clearRoute(); return; }
+async function toggleRouteAndPanel(tripId,line,bg,fg){
+    const panel=document.getElementById('stop-sequence-panel');
+    if(panel.classList.contains('open')&&panel.dataset.tripId===tripId){panel.classList.remove('open');clearRoute();return;}
     panel.dataset.tripId=tripId; panel.classList.add('open');
     document.getElementById('ssp-line-badge').textContent=line;
     document.getElementById('ssp-line-badge').style.background=bg;
-    document.getElementById('ssp-line-badge').style.color=fg;
+    document.getElementById('ssp-line-badge').style.color=getTextColor(bg);
     document.getElementById('ssp-stops').innerHTML='<div style="padding:20px;color:#888;text-align:center;font-size:13px">Lade Stationen…</div>';
-    try {
+    try{
         let stopovers=tripStopoverCache[tripId];
-        if (!stopovers) { const res=await fetch(`https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`); const data=await res.json(); const trip=data.trip||data; stopovers=trip.stopovers||[]; tripStopoverCache[tripId]=stopovers; }
-        const info=leafletMarkers[tripId], now=Date.now();
+        if(!stopovers){const res=await fetch(`https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`);const data=await res.json();const trip=data.trip||data;stopovers=trip.stopovers||[];tripStopoverCache[tripId]=stopovers;}
+        const info=leafletMarkers[tripId],now=Date.now();
         let nextIdx=stopovers.findIndex(s=>{const dep=s.departure?new Date(s.departure).getTime():null;return dep&&dep>now;});
-        if (nextIdx===-1) nextIdx=stopovers.length-1;
-        updateStopPanel(tripId,line,info?.dest||'',bg,fg,stopovers,nextIdx);
+        if(nextIdx===-1)nextIdx=stopovers.length-1;
+        updateStopPanel(tripId,line,info?.dest||'',bg,getTextColor(bg),stopovers,nextIdx);
         drawRoute(stopovers,bg,nextIdx);
-    } catch(e) { document.getElementById('ssp-stops').innerHTML='<div style="padding:20px;color:#c0392b;font-size:12px">Fehler beim Laden</div>'; }
+    }catch(e){document.getElementById('ssp-stops').innerHTML='<div style="padding:20px;color:#c0392b;font-size:12px">Fehler beim Laden</div>';}
 }
 
-function drawRoute(stopovers, color, nextIdx) {
-    clearRoute(); if (!leafletMap) return;
+function drawRoute(stopovers,color,nextIdx){
+    clearRoute();if(!leafletMap)return;
     const coords=stopovers.filter(s=>s.stop?.location).map(s=>[s.stop.location.latitude,s.stop.location.longitude]);
-    if (coords.length<2) return;
+    if(coords.length<2)return;
     routePolyline=L.polyline(coords,{color,weight:4,opacity:0.75}).addTo(leafletMap);
     leafletMap.fitBounds(routePolyline.getBounds(),{padding:[40,40]});
-    if (!routeStopMarkers) routeStopMarkers=L.layerGroup().addTo(leafletMap); else routeStopMarkers.addTo(leafletMap);
-    stopovers.forEach((s,i) => {
-        if (!s.stop?.location) return;
-        const isPast=i<nextIdx, isNext=i===nextIdx;
-        L.circleMarker([s.stop.location.latitude,s.stop.location.longitude],{radius:isNext?6:4,color,weight:1.5,fillColor:isPast?'#aaa':color,fillOpacity:isPast?0.4:1})
-         .addTo(routeStopMarkers).bindTooltip(s.stop.name||'?',{permanent:false,direction:'top',offset:[0,-6]});
+    if(!routeStopMarkers)routeStopMarkers=L.layerGroup().addTo(leafletMap);else routeStopMarkers.addTo(leafletMap);
+    stopovers.forEach((s,i)=>{
+        if(!s.stop?.location)return;
+        const isPast=i<nextIdx,isNext=i===nextIdx;
+        L.circleMarker([s.stop.location.latitude,s.stop.location.longitude],{radius:isNext?6:4,color,weight:1.5,fillColor:isPast?'#aaa':color,fillOpacity:isPast?0.4:1}).addTo(routeStopMarkers).bindTooltip(s.stop.name||'?',{permanent:false,direction:'top',offset:[0,-6]});
     });
 }
-
-function clearRoute() {
-    if (routePolyline) { leafletMap?.removeLayer(routePolyline); routePolyline=null; }
-    if (routeStopMarkers) { leafletMap?.removeLayer(routeStopMarkers); routeStopMarkers=null; }
+function clearRoute(){
+    if(routePolyline){leafletMap?.removeLayer(routePolyline);routePolyline=null;}
+    if(routeStopMarkers){leafletMap?.removeLayer(routeStopMarkers);routeStopMarkers=null;}
 }
-
-function updateStopPanel(tripId, line, dest, bg, fg, stopovers, nextIdx) {
+function updateStopPanel(tripId,line,dest,bg,fg,stopovers,nextIdx){
     const panel=document.getElementById('stop-sequence-panel');
-    if (!panel.classList.contains('open')||panel.dataset.tripId!==tripId) return;
+    if(!panel.classList.contains('open')||panel.dataset.tripId!==tripId)return;
     document.getElementById('ssp-title').textContent=dest?`→ ${dest}`:'Stationsverlauf';
-    const container=document.getElementById('ssp-stops'); container.innerHTML='';
-    stopovers.forEach((s,i) => {
-        const isPast=i<nextIdx-1, isCurrent=i===nextIdx-1, isNext=i===nextIdx, name=s.stop?.name||'?',
-              dep=s.departure||s.arrival, delay=s.departureDelay||s.arrivalDelay||0;
+    const container=document.getElementById('ssp-stops');container.innerHTML='';
+    stopovers.forEach((s,i)=>{
+        const isPast=i<nextIdx-1,isCurrent=i===nextIdx-1,isNext=i===nextIdx,name=s.stop?.name||'?',dep=s.departure||s.arrival,delay=s.departureDelay||s.arrivalDelay||0;
         let timeStr='';
-        if (dep) { const d=new Date(dep),hh=d.getHours().toString().padStart(2,'0'),mm=d.getMinutes().toString().padStart(2,'0'),dm=Math.round(delay/60),cls=dm>0?'ssp-delay-pos':'ssp-delay-neg',ds=dm!==0?` <span class="${cls}">${dm>0?'+':''}${dm}</span>`:''; timeStr=`${hh}:${mm}${ds}`; }
+        if(dep){const d=new Date(dep),hh=d.getHours().toString().padStart(2,'0'),mm=d.getMinutes().toString().padStart(2,'0'),dm=Math.round(delay/60),cls=dm>0?'ssp-delay-pos':'ssp-delay-neg',ds=dm!==0?` <span class="${cls}">${dm>0?'+':''}${dm}</span>`:'';timeStr=`${hh}:${mm}${ds}`;}
         const el=document.createElement('div');
         el.className=`ssp-stop${isPast?' passed':''}${isCurrent?' is-current':''}${isNext?' is-next':''}`;
         el.style.cssText='display:flex;align-items:stretch;padding:1px 14px 1px 6px;';
         el.innerHTML=`<div class="ssp-line-col" style="color:${bg}"><div class="ssp-vline ssp-vline-top" style="background:${isPast?'#ccc':bg};width:2px;min-height:8px"></div><div class="ssp-dot" style="color:${bg}"></div><div class="ssp-vline ssp-vline-bot" style="background:${bg};width:2px;min-height:8px;opacity:${isPast?'.3':'1'}"></div></div><div class="ssp-info"><div class="ssp-stop-name">${name}</div>${timeStr?`<div class="ssp-time">${timeStr}</div>`:''}</div>`;
         container.appendChild(el);
-        if (isNext) setTimeout(()=>el.scrollIntoView({block:'center',behavior:'smooth'}),100);
+        if(isNext)setTimeout(()=>el.scrollIntoView({block:'center',behavior:'smooth'}),100);
     });
 }
+document.getElementById('ssp-close').addEventListener('click',()=>{document.getElementById('stop-sequence-panel').classList.remove('open');clearRoute();});
 
-document.getElementById('ssp-close').addEventListener('click', () => { document.getElementById('stop-sequence-panel').classList.remove('open'); clearRoute(); });
+// ═══════════════════════════════════════════════════════
+// POPUP-SYSTEM für Schematische Karte
+// ═══════════════════════════════════════════════════════
+const popupOverlay  = document.getElementById('schematic-popup-overlay');
+const popupBadge    = document.getElementById('schematic-popup-badge');
+const popupDest     = document.getElementById('schematic-popup-dest');
+const popupDelay    = document.getElementById('schematic-popup-delay');
+const popupNext     = document.getElementById('schematic-popup-next');
+const popupStops    = document.getElementById('schematic-popup-stops');
+const popupBtnTrack = document.getElementById('popup-btn-track');
+const popupBtnRoute = document.getElementById('popup-btn-route');
+
+document.getElementById('schematic-popup-close').addEventListener('click', closePopup);
+popupOverlay.addEventListener('click', e => { if (e.target===popupOverlay) closePopup(); });
+
+function closePopup() {
+    popupOverlay.classList.remove('visible');
+    popupCurrentUid = null;
+}
+
+function showPopup(uid, td) {
+    popupCurrentUid = uid;
+    const bg = td.bg || lineColors[td.line] || '#115D91';
+    const fg = td.fg || getTextColor(bg);
+    const dest = td.apiDirection || '';
+    const delayMin = td.movement?.delay ? Math.round(td.movement.delay/60) : 0;
+    const delayStr = delayMin > 0 ? `+${delayMin} Min` : delayMin < 0 ? `${delayMin} Min` : null;
+
+    // Header einfärben
+    const header = document.getElementById('schematic-popup-header');
+    header.style.background = bg;
+    header.style.color = fg;
+
+    popupBadge.textContent = td.line;
+    popupBadge.style.background = 'rgba(0,0,0,0.15)';
+    popupBadge.style.color = fg;
+    popupDest.textContent = dest ? `→ ${dest}` : '';
+    popupDelay.textContent = delayStr ? delayStr : '';
+    popupDelay.style.display = delayStr ? '' : 'none';
+
+    // Nächste Station
+    popupNext.innerHTML = `<span style="color:#999;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Nächste Station</span><br><strong>${td.nextStation || '?'}</strong>`;
+
+    // Buttons konfigurieren
+    popupBtnTrack.onclick = () => {
+        closePopup();
+        switchMode('real');
+        setTimeout(() => {
+            const lm = leafletMarkers[td.tripId];
+            if (lm) { startTracking(td.tripId); leafletMap.setView(lm.marker.getLatLng(),14,{animate:true}); }
+        }, 400);
+    };
+    popupBtnRoute.onclick = () => {
+        closePopup();
+        switchMode('real');
+        setTimeout(() => {
+            const lm = leafletMarkers[td.tripId];
+            if (lm) toggleRouteAndPanel(td.tripId, td.line, td.bg, td.fg);
+        }, 400);
+    };
+
+    // Halteinfos zurücksetzen und laden
+    popupStops.innerHTML = '<div class="popup-loading">Lade Halteinfos…</div>';
+    popupOverlay.classList.add('visible');
+
+    fetchPopupDetails(td.tripId, td.line, dest, bg);
+}
+
+async function fetchPopupDetails(tripId, line, dest, bg) {
+    // Nur wenn das Popup noch für diesen Zug offen ist
+    const currentUid = popupCurrentUid;
+    try {
+        let stopovers = tripStopoverCache[tripId];
+        if (!stopovers) {
+            const res = await fetch(`https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`);
+            const data = await res.json(); const trip = data.trip||data;
+            stopovers = trip.stopovers||[]; tripStopoverCache[tripId] = stopovers;
+        }
+        // Popup evtl. schon wieder geschlossen
+        if (popupCurrentUid !== currentUid) return;
+
+        const now = Date.now(); let prevIdx=-1, nextIdx=-1;
+        for (let i=0;i<stopovers.length;i++) {
+            const dep=stopovers[i].departure?new Date(stopovers[i].departure).getTime():null;
+            if (dep&&dep>now){nextIdx=i;prevIdx=i-1;break;}
+        }
+        if (nextIdx===-1){prevIdx=stopovers.length-2;nextIdx=stopovers.length-1;}
+
+        const prevStop = prevIdx>=0?stopovers[prevIdx]:null;
+        const nextStop = nextIdx>=0?stopovers[nextIdx]:null;
+
+        // Popup nochmal aktualisieren
+        const td = Object.values(liveTrains).find(t => t.tripId===tripId);
+        if (td) {
+            popupNext.innerHTML = nextStop
+                ? `<span style="color:#f3791d;font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Nächster Halt</span><br><strong>${nextStop.stop?.name||'?'}</strong>`
+                : `<span style="color:#999;font-size:11px">Endstation erreicht</span>`;
+        }
+
+        // Prev + Next Halte-Karten
+        popupStops.innerHTML = '';
+
+        if (prevStop) {
+            const card = document.createElement('div');
+            card.className = 'popup-stop-row';
+            card.innerHTML = `
+                <div class="popup-stop-label">Vorher</div>
+                <div class="popup-stop-name">${prevStop.stop?.name||'?'}</div>
+                <div class="popup-stop-time">${fmtTime(prevStop.departure||prevStop.arrival, prevStop.departureDelay||prevStop.arrivalDelay||0)}</div>`;
+            popupStops.appendChild(card);
+        }
+        if (nextStop) {
+            const card = document.createElement('div');
+            card.className = 'popup-stop-row';
+            card.style.borderTop = prevStop ? `1px solid #f0f0f0` : '';
+            card.style.paddingTop = prevStop ? '6px' : '';
+            card.innerHTML = `
+                <div class="popup-stop-label" style="color:${bg};font-weight:700">Nächste</div>
+                <div class="popup-stop-name" style="font-weight:700">${nextStop.stop?.name||'?'}</div>
+                <div class="popup-stop-time">${fmtTime(nextStop.departure||nextStop.arrival, nextStop.departureDelay||nextStop.arrivalDelay||0)}</div>`;
+            popupStops.appendChild(card);
+        }
+
+        // Kurzübersicht der Stationen (5 vor und 5 nach aktuellem)
+        const start = Math.max(0, nextIdx-3), end = Math.min(stopovers.length, nextIdx+5);
+        const mini = document.createElement('div');
+        mini.style.cssText = 'margin-top:10px;border-top:1px solid #eee;padding-top:8px;';
+        mini.innerHTML = `<div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#bbb;margin-bottom:4px">Streckenverlauf</div>`;
+
+        for (let i=start;i<end;i++) {
+            const s = stopovers[i];
+            const name = s.stop?.name||'?';
+            if (name.toLowerCase().includes('zwischen')) continue;
+            const isPast = i < nextIdx;
+            const isCurr = i === nextIdx-1;
+            const isNext = i === nextIdx;
+            const row = document.createElement('div');
+            row.style.cssText = `display:flex;align-items:center;gap:6px;padding:2px 0;font-size:11px;color:${isPast?'#bbb':isNext?bg:'#444'};font-weight:${isNext?'700':'400'};`;
+            row.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${isPast?'#ddd':bg};display:inline-block;flex-shrink:0;${isNext?'width:9px;height:9px;':''}" ></span>${name}`;
+            mini.appendChild(row);
+        }
+        if (nextIdx+5 < stopovers.length) {
+            const more = document.createElement('div');
+            more.style.cssText = 'font-size:10px;color:#bbb;text-align:center;padding-top:2px;';
+            more.textContent = `… ${stopovers.length-end} weitere Halte`;
+            mini.appendChild(more);
+        }
+        popupStops.appendChild(mini);
+
+    } catch(e) {
+        if (popupCurrentUid === currentUid) {
+            popupStops.innerHTML = '<div class="popup-error">Details nicht verfügbar</div>';
+        }
+    }
+}
 
 // ═══════════════════════════════════════════════════════
 // SCHEMATISCHE KARTE (D3 + Zoom + Richtungspfeile)
@@ -570,390 +859,224 @@ d3.xml("bvggrafik1c.svg").then(function(xml) {
 
     zoomGroup=document.createElementNS("http://www.w3.org/2000/svg","g");
     zoomGroup.setAttribute("class","zoom-layer");
-    while (svgNode.firstChild) zoomGroup.appendChild(svgNode.firstChild);
+    while(svgNode.firstChild)zoomGroup.appendChild(svgNode.firstChild);
     svgNode.appendChild(zoomGroup);
 
+    // SVG nimmt im Normal-Modus 90vh, im Vollbild 100% des Containers
     svg.style("width","100%").style("height","90vh").style("display","block");
+
     fitToScreen=function(){
         const cw=container.clientWidth||window.innerWidth, ch=container.clientHeight||window.innerHeight;
         const s=Math.min(cw/svgW,ch/svgH)*0.97;
-        svg.call(zoomBehavior.transform, d3.zoomIdentity.translate((cw-svgW*s)/2,(ch-svgH*s)/2).scale(s));
+        svg.call(zoomBehavior.transform,d3.zoomIdentity.translate((cw-svgW*s)/2,(ch-svgH*s)/2).scale(s));
     };
     zoomBehavior=d3.zoom().scaleExtent([0.3,10]).on("zoom",e=>d3.select(zoomGroup).attr("transform",e.transform));
     svg.call(zoomBehavior);
     container.addEventListener("wheel",e=>e.preventDefault(),{passive:false});
     setTimeout(fitToScreen,50);
     window.addEventListener("resize",fitToScreen);
-    document.addEventListener("fullscreenchange",()=>setTimeout(fitToScreen,150));
+
+    // Vollbild: SVG-Höhe auf 100% umschalten damit kein weißer Balken entsteht
+    document.addEventListener("fullscreenchange",()=>{
+        if(document.fullscreenElement){
+            svg.style("height","100%");
+        }else{
+            svg.style("height","90vh");
+        }
+        setTimeout(fitToScreen,150);
+    });
+
     document.getElementById("zoom-in").addEventListener("click",()=>svg.transition().duration(250).call(zoomBehavior.scaleBy,1.5));
     document.getElementById("zoom-out").addEventListener("click",()=>svg.transition().duration(250).call(zoomBehavior.scaleBy,1/1.5));
     document.getElementById("zoom-reset").addEventListener("click",fitToScreen);
 
-    // ── Liniendaten aus trainRoutesID.js
-    // Jeder Punkt hat: { x, y (SVG-Koordinaten), xr, yr (GPS), station, id }
+    // ── Liniendaten
     const allLines = {
-        U1:  typeof u1Points  !== 'undefined' ? u1Points  : [],
-        U2:  typeof u2Points  !== 'undefined' ? u2Points  : [],
-        U3:  typeof u3Points  !== 'undefined' ? u3Points  : [],
-        U4:  typeof u4Points  !== 'undefined' ? u4Points  : [],
-        U5:  typeof u5Points  !== 'undefined' ? u5Points  : [],
-        U6:  typeof u6Points  !== 'undefined' ? u6Points  : [],
-        U7:  typeof u7Points  !== 'undefined' ? u7Points  : [],
-        U8:  typeof u8Points  !== 'undefined' ? u8Points  : [],
-        U9:  typeof u9Points  !== 'undefined' ? u9Points  : [],
-        U12: typeof u12Points !== 'undefined' ? u12Points : []
+        U1:typeof u1Points!=='undefined'?u1Points:[], U2:typeof u2Points!=='undefined'?u2Points:[],
+        U3:typeof u3Points!=='undefined'?u3Points:[], U4:typeof u4Points!=='undefined'?u4Points:[],
+        U5:typeof u5Points!=='undefined'?u5Points:[], U6:typeof u6Points!=='undefined'?u6Points:[],
+        U7:typeof u7Points!=='undefined'?u7Points:[], U8:typeof u8Points!=='undefined'?u8Points:[],
+        U9:typeof u9Points!=='undefined'?u9Points:[], U12:typeof u12Points!=='undefined'?u12Points:[]
     };
 
-    // ─────────────────────────────────────────────────────
-    // KERN-ALGORITHMUS: Pfeilwinkel korrekt berechnen
-    //
-    // trainRoutesID.js enthält für jede Linie ein Array von Punkten
-    // mit x/y (SVG-Pixel) und xr/yr (GPS lat/lon).
-    // findNearestPoint() findet den nächstgelegenen Punkt per GPS.
-    // getArrowAngleAtIndex() berechnet dann den Winkel zwischen dem
-    // aktuellen Punkt und seinem Nachbarn in Fahrtrichtung –
-    // basierend auf den SVG x/y-Koordinaten.
-    // Das ergibt immer den exakten geometrischen Winkel der Strecke.
-    // ─────────────────────────────────────────────────────
-
-    // Nächsten Streckenpunkt per GPS-Distanz finden
-    // Gibt { punkt, index } zurück
-    function findNearestPoint(lat, lon, line) {
-        const pts = allLines[line];
-        if (!pts?.length) return null;
-        let best=null, bestIdx=-1, minD=Infinity;
-        pts.forEach((p, i) => {
-            const d = Math.hypot(p.xr - lat, p.yr - lon);
-            if (d < minD) { minD=d; best=p; bestIdx=i; }
-        });
-        return best ? { pt: best, idx: bestIdx } : null;
+    function findNearestPoint(lat,lon,line){
+        const pts=allLines[line]; if(!pts?.length)return null;
+        let best=null,bestIdx=-1,minD=Infinity;
+        pts.forEach((p,i)=>{const d=Math.hypot(p.xr-lat,p.yr-lon);if(d<minD){minD=d;best=p;bestIdx=i;}});
+        return best?{pt:best,idx:bestIdx}:null;
     }
-
-    // Fahrtrichtung bestimmen: Vergleich des aktuellen Index mit dem vorherigen.
-    // Gibt +1 (vorwärts in Array) oder -1 (rückwärts) zurück.
-    // Bei unveränderter Position wird die zuletzt bekannte Richtung beibehalten.
-    function determineDirection(prevIdx, currIdx, lastKnownDir) {
-        if (prevIdx === -1 || currIdx === -1 || prevIdx === currIdx) {
-            return lastKnownDir || 1;
-        }
-        return currIdx > prevIdx ? 1 : -1;
+    function determineDirection(prevIdx,currIdx,lastDir){
+        if(prevIdx===-1||currIdx===-1||prevIdx===currIdx)return lastDir||1;
+        return currIdx>prevIdx?1:-1;
     }
-
-    // Pfeilwinkel berechnen: atan2 auf den SVG x/y-Koordinaten des
-    // aktuellen Punktes und seines Nachbarn in Fahrtrichtung.
-    // SVG-y zeigt nach unten → atan2(dy, dx) liefert direkt den richtigen Winkel.
-    function getArrowAngle(pts, currIdx, dir) {
-        const nextIdx = dir === 1 ? currIdx + 1 : currIdx - 1;
-        if (nextIdx < 0 || nextIdx >= pts.length) return 0;
-        const curr = pts[currIdx], next = pts[nextIdx];
-        return Math.atan2(next.y - curr.y, next.x - curr.x) * 180 / Math.PI;
+    function getArrowAngle(pts,currIdx,dir){
+        const ni=dir===1?currIdx+1:currIdx-1;
+        if(ni<0||ni>=pts.length)return 0;
+        return Math.atan2(pts[ni].y-pts[currIdx].y,pts[ni].x-pts[currIdx].x)*180/Math.PI;
     }
-
-    // Nächste benannte Station in Fahrtrichtung finden
-    function findNextStation(pts, currIdx, dir) {
-        const step = dir === 1 ? 1 : -1;
-        for (let i = currIdx + step; i >= 0 && i < pts.length; i += step) {
-            if (pts[i].station && !pts[i].station.toLowerCase().includes("zwischen")) {
-                return pts[i].station;
-            }
+    function findNextStation(pts,currIdx,dir){
+        const step=dir===1?1:-1;
+        for(let i=currIdx+step;i>=0&&i<pts.length;i+=step){
+            if(pts[i].station&&!pts[i].station.toLowerCase().includes("zwischen"))return pts[i].station;
         }
         return "ENDE";
     }
-
-    // Pfeil-Element eines bestehenden Zuges rotieren
-    function setArrowAngle(gEl, angle) {
-        const arrow = gEl.querySelector('.train-arrow');
-        if (arrow) arrow.setAttribute('transform', `rotate(${angle})`);
+    function setArrowAngle(gEl,angle){
+        const arrow=gEl.querySelector('.train-arrow');
+        if(arrow)arrow.setAttribute('transform',`rotate(${angle})`);
     }
 
-    function checkAndCleanDuplicates() {
+    function checkAndCleanDuplicates(){
         existingTrainIds.clear();
-        const elems=document.querySelectorAll('[data-train-id]'), map=new Map();
-        elems.forEach(el => {
-            const id=el.getAttribute('data-train-id');
-            existingTrainIds.add(id);
-            if (!map.has(id)) map.set(id,[]);
-            map.get(id).push(el);
-        });
-        map.forEach((els,id) => { for (let i=1;i<els.length;i++) els[i].remove(); });
-        Object.keys(liveTrains).forEach(id => {
+        const elems=document.querySelectorAll('[data-train-id]'),map=new Map();
+        elems.forEach(el=>{const id=el.getAttribute('data-train-id');existingTrainIds.add(id);if(!map.has(id))map.set(id,[]);map.get(id).push(el);});
+        map.forEach((els,id)=>{for(let i=1;i<els.length;i++)els[i].remove();});
+        Object.keys(liveTrains).forEach(id=>{
             const els=document.querySelectorAll(`[data-train-id="${id}"]`);
-            if (els.length===0) delete liveTrains[id];
-            else if (els.length>1) { liveTrains[id].element=d3.select(els[0]); for(let i=1;i<els.length;i++) els[i].remove(); }
+            if(els.length===0)delete liveTrains[id];
+            else if(els.length>1){liveTrains[id].element=d3.select(els[0]);for(let i=1;i<els.length;i++)els[i].remove();}
         });
     }
 
-    const stationinfo = d3.select("#stationinfo");
+    const stationinfo=d3.select("#stationinfo");
 
-    // ── HAUPT-FETCH
-    async function fetchLiveData() {
-        try {
+    async function fetchLiveData(){
+        try{
             checkAndCleanDuplicates();
-            const res  = await fetch('https://v6.vbb.transport.rest/radar?north=52.5994968&west=13.1926072&south=52.4122984&east=13.6351573&results=1000');
-            const data = await res.json();
-            if (!data?.movements) return;
-
-            lastMovements = data.movements;
-            const now = new Date();
-            if (currentMapMode === 'real') updateLeafletTrains(data.movements);
-
-            const toRemove = new Set(Object.keys(liveTrains));
+            const res=await fetch('https://v6.vbb.transport.rest/radar?north=52.5994968&west=13.1926072&south=52.4122984&east=13.6351573&results=1000');
+            const data=await res.json();
+            if(!data?.movements)return;
+            lastMovements=data.movements;
+            const now=new Date();
+            if(currentMapMode==='real')updateLeafletTrains(data.movements);
+            const toRemove=new Set(Object.keys(liveTrains));
 
             data.movements
-                .filter(v => v.line?.productName==='U' && v.location && v.line.name && v.tripId)
-                .forEach(v => {
-                    const line = v.line.name;
-                    const uid  = `${line}_${v.tripId}`;
+                .filter(v=>v.line?.productName==='U'&&v.location&&v.line.name&&v.tripId)
+                .forEach(v=>{
+                    const line=v.line.name, uid=`${line}_${v.tripId}`;
                     toRemove.delete(uid);
+                    const found=findNearestPoint(v.location.latitude,v.location.longitude,line);
+                    if(!found)return;
+                    const{pt:np,idx:npIdx}=found, pts=allLines[line];
 
-                    const found = findNearestPoint(v.location.latitude, v.location.longitude, line);
-                    if (!found) return;
-                    const { pt: np, idx: npIdx } = found;
-                    const pts = allLines[line];
-
-                    if (existingTrainIds.has(uid) && liveTrains[uid]) {
-                        // ── Vorhandenen Zug aktualisieren ──────────────────
-                        const prev = liveTrains[uid];
-                        const ox = lineOffsets[line]?.dx || 0;
-                        const oy = lineOffsets[line]?.dy || 0;
-
-                        // Richtung aus Index-Änderung bestimmen
-                        const dir = determineDirection(prev.ptIdx, npIdx, prev.dir);
-                        const angle = getArrowAngle(pts, npIdx, dir);
-                        const nextStation = findNextStation(pts, npIdx, dir);
-
-                        if ((prev.ptIdx !== npIdx) && prev.element) {
-                            prev.element.attr("transform", `translate(${np.x + ox}, ${np.y + oy})`);
-                            setArrowAngle(prev.element.node(), angle);
+                    if(existingTrainIds.has(uid)&&liveTrains[uid]){
+                        const prev=liveTrains[uid];
+                        const ox=lineOffsets[line]?.dx||0, oy=lineOffsets[line]?.dy||0;
+                        const dir=determineDirection(prev.ptIdx,npIdx,prev.dir);
+                        const angle=getArrowAngle(pts,npIdx,dir);
+                        const nextStation=findNextStation(pts,npIdx,dir);
+                        if(prev.ptIdx!==npIdx&&prev.element){
+                            prev.element.attr("transform",`translate(${np.x+ox},${np.y+oy})`);
+                            setArrowAngle(prev.element.node(),angle);
                         }
-
-                        liveTrains[uid] = {
-                            ...prev, ptIdx: npIdx, x: np.x, y: np.y,
-                            lastUpdated: now, nextStation, dir,
-                            apiDirection: v.direction || prev.apiDirection || '',
-                            movement: v
-                        };
-
-                    } else {
-                        // ── Neuen Zug erstellen ─────────────────────────────
-                        // Initiale Richtung: aus API-Endstation vs. erster/letzter Strecken-Station.
-                        // Vergleich des Zielnamens mit den echten Stationsnamen aus trainRoutesID.js.
-                        let initDir = 1;
-                        if (v.direction) {
-                            const dest = v.direction.toLowerCase();
-                            // Erste und letzte benannte Station der Linie
-                            const firstNamed = pts.find(p => p.station && !p.station.toLowerCase().includes("zwischen"));
-                            const lastNamed  = [...pts].reverse().find(p => p.station && !p.station.toLowerCase().includes("zwischen"));
-                            const firstName  = (firstNamed?.station || '').toLowerCase();
-                            const lastName   = (lastNamed?.station  || '').toLowerCase();
-                            // Prüfe ob Ziel besser zur ersten Station passt → rückwärts
-                            const scoreFirst = firstName.split(' ').filter(w=>w.length>3).filter(w=>dest.includes(w)).length;
-                            const scoreLast  = lastName.split(' ').filter(w=>w.length>3).filter(w=>dest.includes(w)).length;
-                            if (scoreFirst > scoreLast) initDir = -1;
+                        // Popup aktualisieren falls dieser Zug gerade angezeigt wird
+                        if(popupCurrentUid===uid){
+                            const pdoc=document.getElementById('schematic-popup-next');
+                            if(pdoc&&nextStation)pdoc.innerHTML=`<span style="color:#f3791d;font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Nächster Halt</span><br><strong>${nextStation}</strong>`;
                         }
+                        liveTrains[uid]={...prev,ptIdx:npIdx,x:np.x,y:np.y,lastUpdated:now,nextStation,dir,apiDirection:v.direction||prev.apiDirection||'',movement:v};
+                    }else{
+                        let initDir=1;
+                        if(v.direction){
+                            const dest=v.direction.toLowerCase();
+                            const firstNamed=pts.find(p=>p.station&&!p.station.toLowerCase().includes("zwischen"));
+                            const lastNamed=[...pts].reverse().find(p=>p.station&&!p.station.toLowerCase().includes("zwischen"));
+                            const scoreFirst=(firstNamed?.station||'').toLowerCase().split(' ').filter(w=>w.length>3&&dest.includes(w)).length;
+                            const scoreLast=(lastNamed?.station||'').toLowerCase().split(' ').filter(w=>w.length>3&&dest.includes(w)).length;
+                            if(scoreFirst>scoreLast)initDir=-1;
+                        }
+                        const angle=getArrowAngle(pts,npIdx,initDir);
+                        const nextStation=findNextStation(pts,npIdx,initDir);
+                        const col=lineColors[line]||'#115D91', fg=getTextColor(col);
+                        const ox=lineOffsets[line]?.dx||0, oy=lineOffsets[line]?.dy||0;
+                        const svgns="http://www.w3.org/2000/svg";
+                        const g=document.createElementNS(svgns,"g");
+                        g.setAttribute("class",`live-train ${line}`);
+                        g.setAttribute("data-train-id",uid);
+                        g.setAttribute("transform",`translate(${np.x+ox},${np.y+oy})`);
+                        g.style.cursor="pointer";
+                        if(!visibleLines[line])g.style.display='none';
 
-                        const angle = getArrowAngle(pts, npIdx, initDir);
-                        const nextStation = findNextStation(pts, npIdx, initDir);
-                        const col = lineColors[line] || '#115D91';
-                        const fg  = getTextColor(col);
-                        const ox  = lineOffsets[line]?.dx || 0;
-                        const oy  = lineOffsets[line]?.dy || 0;
-
-                        const svgns = "http://www.w3.org/2000/svg";
-                        const g = document.createElementNS(svgns, "g");
-                        g.setAttribute("class", `live-train ${line}`);
-                        g.setAttribute("data-train-id", uid);
-                        g.setAttribute("transform", `translate(${np.x + ox}, ${np.y + oy})`);
-                        g.style.cursor = "pointer";
-                        if (!visibleLines[line]) g.style.display = 'none';
-
-                        // Äußerer Kreis (weißer Ring)
-                        const c1 = document.createElementNS(svgns, "circle");
-                        c1.setAttribute("r", "6");
-                        c1.setAttribute("fill", "#ffffff");
-                        c1.setAttribute("stroke", "#000000");
-                        c1.setAttribute("stroke-width", "1.8");
+                        const c1=document.createElementNS(svgns,"circle");
+                        c1.setAttribute("r","6");c1.setAttribute("fill","#ffffff");
+                        c1.setAttribute("stroke","#000000");c1.setAttribute("stroke-width","1.8");
                         g.appendChild(c1);
 
-                        // Innerer Kreis (Linienfarbe)
-                        const c2 = document.createElementNS(svgns, "circle");
-                        c2.setAttribute("r", "3.5");
-                        c2.setAttribute("fill", col);
+                        const c2=document.createElementNS(svgns,"circle");
+                        c2.setAttribute("r","3.5");c2.setAttribute("fill",col);
                         g.appendChild(c2);
 
-                        // Richtungspfeil:
-                        // Dreieck-Spitze zeigt bei rotate(0°) nach rechts (+x-Richtung).
-                        // getArrowAngle() dreht per atan2 auf die echte Streckengeometrie.
-                        // Das Polygon ist so platziert dass seine Basis am Kreisrand (r=6) beginnt.
-                       const arrow = document.createElementNS(svgns, "polygon");
-                        arrow.setAttribute("class", "train-arrow");
-                        arrow.setAttribute("points", "12,0 5.5,-3.5 5.5,3.5");
-                        arrow.setAttribute("fill", "black");
-                        arrow.setAttribute("stroke", "#000000");
-                        arrow.setAttribute("stroke-width", "0.8");
-                        arrow.setAttribute("transform", `rotate(${angle})`);
+                        const arrow=document.createElementNS(svgns,"polygon");
+                        arrow.setAttribute("class","train-arrow");
+                        arrow.setAttribute("points","12,0 5.5,-3.5 5.5,3.5");
+                        arrow.setAttribute("fill","black");
+                        arrow.setAttribute("stroke","#000000");
+                        arrow.setAttribute("stroke-width","0.8");
+                        arrow.setAttribute("transform",`rotate(${angle})`);
                         g.appendChild(arrow);
 
                         zoomGroup.appendChild(g);
 
-                        g.addEventListener("mouseenter", () => {
-                            const td = liveTrains[uid];
-                            const ns = td?.nextStation || "Unbekannt";
-                            stationinfo.style("display","block")
-                                .html(`<strong>${line}</strong><br>→ ${td?.apiDirection||'?'}`+
-                                      (ns==="ENDE" ? "<br>Fahrt endet hier" : `<br>Nächste: ${ns}`));
+                        g.addEventListener("mouseenter",()=>{
+                            const td=liveTrains[uid],ns=td?.nextStation||"Unbekannt";
+                            stationinfo.style("display","block").html(`<strong>${line}</strong><br>→ ${td?.apiDirection||'?'}`+(ns==="ENDE"?"<br>Fahrt endet hier":`<br>Nächste: ${ns}`));
                         });
-                        g.addEventListener("mousemove", e =>
-                            stationinfo.style("left",(e.clientX+12)+"px").style("top",(e.clientY+12)+"px"));
-                        g.addEventListener("mouseleave", () => stationinfo.style("display","none"));
-                        g.addEventListener("click", e => {
+                        g.addEventListener("mousemove",e=>stationinfo.style("left",(e.clientX+12)+"px").style("top",(e.clientY+12)+"px"));
+                        g.addEventListener("mouseleave",()=>stationinfo.style("display","none"));
+                        g.addEventListener("click",e=>{
                             e.stopPropagation();
-                            const td = liveTrains[uid];
-                            if (td) showSchematicDetail(uid, td);
+                            const td=liveTrains[uid];
+                            if(td)showPopup(uid,td);
                         });
 
-                        liveTrains[uid] = {
-                            element: d3.select(g), line, lastUpdated: now,
-                            ptIdx: npIdx, x: np.x, y: np.y,
-                            nextStation, dir: initDir,
-                            apiDirection: v.direction || '',
-                            tripId: v.tripId, movement: v, bg: col, fg
-                        };
+                        liveTrains[uid]={element:d3.select(g),line,lastUpdated:now,ptIdx:npIdx,x:np.x,y:np.y,nextStation,dir:initDir,apiDirection:v.direction||'',tripId:v.tripId,movement:v,bg:col,fg};
                         existingTrainIds.add(uid);
                         updateTrainCount();
                     }
                 });
 
-            toRemove.forEach(id => { liveTrains[id]?.element?.remove(); delete liveTrains[id]; existingTrainIds.delete(id); });
-            Object.keys(liveTrains).forEach(id => {
-                if (now - liveTrains[id].lastUpdated > 60000) { liveTrains[id]?.element?.remove(); delete liveTrains[id]; existingTrainIds.delete(id); }
-            });
-
-            document.getElementById('last-update').textContent = now.toLocaleTimeString('de-DE');
+            toRemove.forEach(id=>{liveTrains[id]?.element?.remove();delete liveTrains[id];existingTrainIds.delete(id);});
+            Object.keys(liveTrains).forEach(id=>{if(now-liveTrains[id].lastUpdated>60000){liveTrains[id]?.element?.remove();delete liveTrains[id];existingTrainIds.delete(id);}});
+            document.getElementById('last-update').textContent=now.toLocaleTimeString('de-DE');
             updateTrainCount();
-        } catch(e) { console.error("Fehler:",e); }
+        }catch(e){console.error("Fehler:",e);}
     }
 
-    function updateTrainCount() {
-        document.getElementById('train-count').textContent =
-            currentMapMode==='real' ? Object.keys(leafletMarkers).length : existingTrainIds.size;
+    function updateTrainCount(){
+        document.getElementById('train-count').textContent=currentMapMode==='real'?Object.keys(leafletMarkers).length:existingTrainIds.size;
     }
 
-    // ── Schematisch: Klick-Detail-Panel ───────────────────
-    let schematicPanel = null;
-
-    function showSchematicDetail(uid, td) {
-        if (!schematicPanel) {
-            schematicPanel = document.createElement('div');
-            schematicPanel.id = 'schematic-detail-panel';
-            schematicPanel.style.cssText = `position:fixed;z-index:9999;background:rgba(255,255,255,0.97);border:1px solid #ddd;border-radius:8px;padding:0;box-shadow:0 4px 20px rgba(0,0,0,0.2);min-width:240px;max-width:290px;font-family:Arial,sans-serif;font-size:13px;overflow:hidden;`;
-            document.addEventListener('click', e => { if (schematicPanel && !schematicPanel.contains(e.target)) schematicPanel.style.display='none'; });
-            document.body.appendChild(schematicPanel);
-        }
-
-        if (document.body.classList.contains('dark-mode')) {
-            schematicPanel.style.background='rgba(18,24,34,0.98)'; schematicPanel.style.borderColor='#444';
-        } else {
-            schematicPanel.style.background='rgba(255,255,255,0.97)'; schematicPanel.style.borderColor='#ddd';
-        }
-
-        const bg=td.bg||lineColors[td.line]||'#115D91', fg=td.fg||getTextColor(bg);
-        const dest=td.apiDirection||'';
-        const delayMin=td.movement?.delay?Math.round(td.movement.delay/60):0;
-        const delayStr=delayMin>0?`+${delayMin} Min`:delayMin<0?`${delayMin} Min`:'+0';
-
-        schematicPanel.innerHTML = `
-            <div style="background:${bg};color:${fg};padding:8px 12px;font-weight:900;font-size:15px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center">
-                <span>${td.line}</span>
-                ${delayMin!==0?`<span style="font-size:11px;opacity:.9">${delayStr}</span>`:''}
-            </div>
-            <div style="padding:10px 12px">
-                ${dest?`<div style="margin-bottom:8px;font-weight:bold">→ ${dest}</div>`:''}
-                <div style="font-size:12px;color:#666;margin-bottom:8px">Nächste: <strong>${td.nextStation||'?'}</strong></div>
-                <div style="display:flex;gap:6px;margin-bottom:8px">
-                    <button onclick="window._schematicTrack('${uid}')" style="flex:1;padding:5px 8px;border:none;border-radius:5px;cursor:pointer;font-size:12px;background:#2c3e50;color:white;font-weight:600">⊙ Verfolgen</button>
-                    <button onclick="window._schematicRoute('${uid}')" style="flex:1;padding:5px 8px;border:none;border-radius:5px;cursor:pointer;font-size:12px;background:#27ae60;color:white;font-weight:600">≡ Route & Halte</button>
-                </div>
-                <hr style="border:none;border-top:1px solid #eee;margin:6px 0">
-                <div id="schematic-stop-info" style="color:#888;font-size:11px;text-align:center;padding:6px 0">Lade Halteinfos…</div>
-            </div>`;
-
-        schematicPanel.style.display='block';
-        schematicPanel.style.top='50%'; schematicPanel.style.left='50%';
-        schematicPanel.style.transform='translate(-50%, -50%)';
-        fetchSchematicTripDetails(td.tripId, td.line, dest, bg, fg, delayMin);
-    }
-
-    async function fetchSchematicTripDetails(tripId, line, dest, bg, fg, delayMin) {
-        try {
-            let stopovers=tripStopoverCache[tripId];
-            if (!stopovers) {
-                const res=await fetch(`https://v6.vbb.transport.rest/trips/${encodeURIComponent(tripId)}?stopovers=true&language=de`);
-                const data=await res.json(); const trip=data.trip||data;
-                stopovers=trip.stopovers||[]; tripStopoverCache[tripId]=stopovers;
-            }
-            const now=Date.now(); let prevIdx=-1, nextIdx=-1;
-            for (let i=0;i<stopovers.length;i++) {
-                const dep=stopovers[i].departure?new Date(stopovers[i].departure).getTime():null;
-                if (dep&&dep>now){nextIdx=i;prevIdx=i-1;break;}
-            }
-            if (nextIdx===-1){prevIdx=stopovers.length-2;nextIdx=stopovers.length-1;}
-            function fmtTime(iso,delay){if(!iso)return '';const d=new Date(iso),hh=d.getHours().toString().padStart(2,'0'),mm=d.getMinutes().toString().padStart(2,'0'),dm=Math.round((delay||0)/60),col=dm>0?'#c0392b':'#27ae60';return `${hh}:${mm} <span style="color:${col};font-weight:bold">${dm>=0?'+':''}${dm}</span>`;}
-            const prevStop=prevIdx>=0?stopovers[prevIdx]:null, nextStop=nextIdx>=0?stopovers[nextIdx]:null;
-            const infoEl=document.getElementById('schematic-stop-info'); if(!infoEl)return;
-            infoEl.style.textAlign='left';
-            infoEl.innerHTML=`
-                ${prevStop?`<div style="margin-bottom:6px"><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em">Vorheriger Halt</div><div style="font-weight:bold">${prevStop.stop?.name||'?'}</div><div style="font-size:12px;color:#555">${fmtTime(prevStop.departure||prevStop.arrival,prevStop.departureDelay||prevStop.arrivalDelay||0)}</div></div>`:''}
-                ${nextStop?`<div><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em">Nächster Halt</div><div style="font-weight:bold">${nextStop.stop?.name||'?'}</div><div style="font-size:12px;color:#555">${fmtTime(nextStop.departure||nextStop.arrival,nextStop.departureDelay||nextStop.arrivalDelay||0)}</div></div>`:`<div style="color:#888">Endstation erreicht</div>`}`;
-        } catch(e) {
-            const infoEl=document.getElementById('schematic-stop-info');
-            if (infoEl) infoEl.innerHTML='<span style="color:#c0392b">Details nicht verfügbar</span>';
-        }
-    }
-
-    window._schematicTrack = function(uid) {
-        const td=liveTrains[uid]; if (!td) return;
-        switchMode('real');
-        setTimeout(() => { const lm=leafletMarkers[td.tripId]; if(lm){startTracking(td.tripId);leafletMap.setView(lm.marker.getLatLng(),14,{animate:true});} }, 400);
-        if (schematicPanel) schematicPanel.style.display='none';
-    };
-    window._schematicRoute = function(uid) {
-        const td=liveTrains[uid]; if (!td) return;
-        switchMode('real');
-        setTimeout(() => { const lm=leafletMarkers[td.tripId]; if(lm) toggleRouteAndPanel(td.tripId,td.line,td.bg,td.fg); }, 400);
-        if (schematicPanel) schematicPanel.style.display='none';
-    };
-
-    document.querySelectorAll('.line-toggle').forEach(cb => {
-        cb.addEventListener('change', function() {
-            const line=this.value; visibleLines[line]=this.checked;
-            d3.selectAll(`.live-train.${line}`).style('display', this.checked ? 'inline' : 'none');
-            Object.entries(leafletMarkers).forEach(([id,{marker,line:ml,productName}]) => {
-                if (productName==='U' && ml===line) { if(this.checked)marker.addTo(leafletMap); else leafletMap?.removeLayer(marker); }
+    document.querySelectorAll('.line-toggle').forEach(cb=>{
+        cb.addEventListener('change',function(){
+            const line=this.value;visibleLines[line]=this.checked;
+            d3.selectAll(`.live-train.${line}`).style('display',this.checked?'inline':'none');
+            Object.entries(leafletMarkers).forEach(([id,{marker,line:ml,productName}])=>{
+                if(productName==='U'&&ml===line){if(this.checked)marker.addTo(leafletMap);else leafletMap?.removeLayer(marker);}
             });
         });
     });
 
-    document.getElementById('toggle-live').addEventListener('click', function() {
-        liveMode = !liveMode;
-        this.textContent = liveMode ? 'Live-Daten deaktivieren' : 'Live-Daten aktivieren';
-        this.classList.toggle('active', liveMode);
-        if (liveMode) { checkAndCleanDuplicates(); fetchLiveData(); liveInterval=setInterval(fetchLiveData,3000); }
-        else {
+    document.getElementById('toggle-live').addEventListener('click',function(){
+        liveMode=!liveMode;
+        this.textContent=liveMode?'Live-Daten deaktivieren':'Live-Daten aktivieren';
+        this.classList.toggle('active',liveMode);
+        if(liveMode){checkAndCleanDuplicates();fetchLiveData();liveInterval=setInterval(fetchLiveData,3000);}
+        else{
             clearInterval(liveInterval);
             Object.keys(liveTrains).forEach(id=>liveTrains[id]?.element?.remove());
-            liveTrains={}; existingTrainIds.clear(); lastMovements=[];
+            liveTrains={};existingTrainIds.clear();lastMovements=[];
             Object.values(leafletMarkers).forEach(({marker})=>leafletMap?.removeLayer(marker));
-            leafletMarkers={}; updateTrainCount();
+            leafletMarkers={};updateTrainCount();
         }
     });
 
-    document.getElementById('refresh-data').addEventListener('click', () => { if (liveMode) fetchLiveData(); });
+    document.getElementById('refresh-data').addEventListener('click',()=>{if(liveMode)fetchLiveData();});
 
     fetchLiveData();
-    liveInterval = setInterval(fetchLiveData, 3000);
+    liveInterval=setInterval(fetchLiveData,3000);
 
-}).catch(e => console.error("SVG-Fehler:", e));
+}).catch(e=>console.error("SVG-Fehler:",e));
 </script>
 </body>
 </html>
