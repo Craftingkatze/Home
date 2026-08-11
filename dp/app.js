@@ -11,31 +11,71 @@ function stripHtml(s=""){const t=document.createElement("template");t.innerHTML=
 function first(...v){return v.find(x=>x&&String(x).trim())||""}
 function validUrl(u){try{const x=new URL(u);return["http:","https:"].includes(x.protocol)}catch{return false}}
 
-function imageFromItem(el){
- const media=el.querySelector("media\\:content, media\\:content, content");
- const thumb=el.querySelector("media\\:thumbnail, thumbnail");
- const enclosure=[...el.querySelectorAll("enclosure")].find(x=>(x.getAttribute("type")||"").startsWith("image/"));
- const desc=el.querySelector("description, summary, content\\:encoded");
- const html=desc?.textContent||""; let img="";
- if(media)img=media.getAttribute("url")||media.getAttribute("href")||"";
- if(!img&&thumb)img=thumb.getAttribute("url")||"";
- if(!img&&enclosure)img=enclosure.getAttribute("url")||"";
- if(!img&&html){const m=html.match(/<img[^>]+src=["']([^"']+)["']/i);if(m)img=m[1]}
- return img;
+function localChildren(el,name){
+ const n=name.toLowerCase();
+ return [...el.children].filter(x=>(x.localName||x.tagName||"").toLowerCase()===n);
+}
+function firstChildText(el,names){
+ for(const n of names){const x=localChildren(el,n)[0];if(x?.textContent?.trim())return x.textContent.trim()}
+ return "";
+}
+function firstDescendant(el,names){
+ const wanted=new Set(names.map(x=>x.toLowerCase()));
+ return [...el.getElementsByTagName("*")].find(x=>wanted.has((x.localName||x.tagName||"").toLowerCase()));
+}
+function descendantText(el,names){return firstDescendant(el,names)?.textContent?.trim()||""}
+function absoluteUrl(value,base){
+ if(!value)return "";
+ try{return new URL(value,base).href}catch{return ""}
+}
+function imageFromItem(el,baseUrl){
+ const candidates=[];
+ for(const node of [...el.getElementsByTagName("*")]){
+  const n=(node.localName||node.tagName||"").toLowerCase();
+  if(n==="content"||n==="thumbnail"){
+   const u=node.getAttribute("url")||node.getAttribute("href");if(u)candidates.push(u);
+  }
+ }
+ for(const node of [...el.getElementsByTagName("enclosure")]){
+  const type=(node.getAttribute("type")||"").toLowerCase(),u=node.getAttribute("url");
+  if(u&&(type.startsWith("image/")||/\.(jpe?g|png|webp|gif)(\?|$)/i.test(u)))candidates.push(u);
+ }
+ const desc=firstDescendant(el,["description","summary","encoded","content"]);
+ const html=desc?.textContent||"";
+ const m=html.match(/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i);
+ if(m)candidates.push(m[1]);
+ return candidates.map(x=>absoluteUrl(x,baseUrl)).find(Boolean)||"";
 }
 function parseRSS(xml,source){
  const doc=new DOMParser().parseFromString(xml,"application/xml");
  if(doc.querySelector("parsererror"))throw new Error("Ungültiges XML/RSS");
- const rootTitle=first(doc.querySelector("channel > title")?.textContent,doc.querySelector("feed > title")?.textContent,source.name,source.url);
- const items=[...doc.querySelectorAll("channel > item, feed > entry")].slice(0,3).map(el=>{
-  const linkEl=el.querySelector("link[rel='alternate'], link");
-  const link=first(linkEl?.getAttribute("href"),el.querySelector("guid")?.textContent);
-  const title=first(el.querySelector("title")?.textContent,"Ohne Titel");
-  const desc=stripHtml(first(el.querySelector("description")?.textContent,el.querySelector("summary")?.textContent,el.querySelector("content\\:encoded")?.textContent,""));
-  const date=first(el.querySelector("pubDate")?.textContent,el.querySelector("published")?.textContent,el.querySelector("updated")?.textContent);
-  return{id:`rss:${source.id}:${link||title}`,type:"rss",source:source.name||rootTitle,title:stripHtml(title),text:desc,image:imageFromItem(el),date,link};
+ const rootTitle=first(descendantText(doc,["title"]),source.name,source.url);
+ const elements=[...doc.getElementsByTagName("*")].filter(el=>{
+  const n=(el.localName||el.tagName||"").toLowerCase();return n==="item"||n==="entry";
  });
- return{items,feedTitle:rootTitle};
+ const items=elements.slice(0,10).map(el=>{
+  const title=first(firstChildText(el,["title"]),descendantText(el,["title"]),"Ohne Titel");
+  let link="";
+  for(const l of localChildren(el,"link")){link=first(l.getAttribute("href"),l.textContent?.trim());if(link)break}
+  if(!link)link=firstChildText(el,["guid","id"]);
+  const desc=stripHtml(first(firstChildText(el,["description","summary"]),descendantText(el,["encoded"]),firstChildText(el,["content"]),""));
+  const date=first(firstChildText(el,["pubDate","published","updated","date","created"]),descendantText(el,["published","updated"]));
+  return{id:`rss:${source.id}:${link||title}`,type:"rss",source:source.name||rootTitle,title:stripHtml(title),text:desc,image:imageFromItem(el,source.url),date,link:absoluteUrl(link,source.url)};
+ });
+ return{items:items.slice(0,3),feedTitle:rootTitle};
+}
+async function fetchArticleImage(articleUrl){
+ if(!validUrl(articleUrl))return "";
+ const candidates=[articleUrl,`https://api.allorigins.win/raw?url=${encodeURIComponent(articleUrl)}`,`https://corsproxy.io/?url=${encodeURIComponent(articleUrl)}`];
+ for(const target of candidates){
+  try{
+   const r=await fetch(target,{cache:"no-store",signal:AbortSignal.timeout(10000)});if(!r.ok)continue;
+   const html=await r.text();
+   const m=html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["']/i)||html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i);
+   if(m?.[1])return absoluteUrl(m[1],articleUrl);
+  }catch{}
+ }
+ return "";
 }
 
 /*
@@ -72,14 +112,25 @@ async function loadRSS(source){
   if(!validUrl(source.url))throw new Error("Ungültige URL");
   const xml=await getTextWithFallbacks(source.url);
   const parsed=parseRSS(xml,source);
-  source.error="";
-  source.lastSuccess=new Date().toISOString();
-  return parsed.items;
+  for(const item of parsed.items)if(!item.image&&item.link)item.image=await fetchArticleImage(item.link);
+  source.error="";source.lastSuccess=new Date().toISOString();return parsed.items;
  }catch(e){source.error=`Abruf fehlgeschlagen: ${e.message}`;return[]}
 }
 async function loadInstagram(source){
- source.error="Instagram benötigt weiterhin einen offiziellen API-Zugang oder einen Backend-Adapter.";
- return[];
+ try{
+  const handle=source.username.replace(/^@/,"").trim();if(!handle)throw new Error("Benutzername fehlt");
+  const endpoint=`https://prexzyapis.com/stalk/igstalk?user=${encodeURIComponent(handle)}`;
+  const r=await fetch(endpoint,{cache:"no-store",signal:AbortSignal.timeout(15000)});
+  if(!r.ok)throw new Error(`API HTTP ${r.status}`);
+  const raw=await r.json(),root=raw?.result||raw?.data||raw;
+  const posts=Array.isArray(root?.posts)?root.posts:Array.isArray(root?.items)?root.items:Array.isArray(raw?.posts)?raw.posts:[];
+  const normalized=posts.slice(0,3).map((p,i)=>{
+   const link=first(p.permalink,p.post_url,p.link,p.url),image=first(p.image,p.image_url,p.thumbnail,p.thumbnail_url,p.display_url,p.media_url,p.photo,p.cover),caption=first(p.caption,p.description,p.text,p.title,""),date=first(p.timestamp,p.published_at,p.created_at,p.date);
+   return{id:`instagram:${source.id}:${p.id||link||i}`,type:"instagram",source:`@${handle}`,title:caption?caption.slice(0,180):`Neuer Beitrag von @${handle}`,text:caption,image:absoluteUrl(image,link||`https://www.instagram.com/${handle}/`),date,link:absoluteUrl(link,`https://www.instagram.com/${handle}/`)};
+  });
+  if(!normalized.length)throw new Error("Keine Posts im API-Ergebnis");
+  source.error="";source.lastSuccess=new Date().toISOString();return normalized;
+ }catch(e){source.error=`Instagram nicht abrufbar: ${e.message}`;return[]}
 }
 async function refreshData(){
  const results=[];

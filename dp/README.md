@@ -1,27 +1,13 @@
-# Digital Signage – GitHub Pages Version
+# Digital Signage – GitHub Pages V3
 
-Diese Version ist für **reines GitHub Pages Hosting** optimiert.
+- RSS/Atom parser mit Namespace-Unterstützung
+- Bilder aus `media:content`, `media:thumbnail`, `enclosure` und `<img>` in Beschreibungen
+- relative Bild-URLs werden aufgelöst
+- fehlende Bilder lösen zusätzlich einen OpenGraph/Twitter-Image-Versuch aus
+- bei fehlendem Bild bekommt die Karte deutlich mehr Platz für Text
+- Feed-Fehler bleiben auf die jeweilige Quelle begrenzt
+- zuletzt erfolgreiche Inhalte bleiben sichtbar
+- Instagram nutzt einen öffentlichen Drittanbieter-Adapter (Prexzy), der laut dessen Dokumentation ohne API-Key und ohne Anmeldung nutzbar ist
+- keine erfundenen Instagram-Posts
 
-GitHub Pages selbst ist statisches Hosting. Es kann daher fremde RSS-Feeds nicht serverseitig proxien. Die App versucht deshalb:
-
-1. RSS direkt im Browser
-2. bei CORS-Fehlern automatisch einen RSS-Fallback
-3. wenn auch der Fallback nicht erreichbar ist, bleiben die zuletzt erfolgreich geladenen Inhalte sichtbar
-
-Es gibt **kein Proxy-Feld und keine zusätzliche Konfiguration**.
-
-## Deployment
-
-Alle drei Dateien in das GitHub-Pages-Repository legen:
-
-- `index.html`
-- `styles.css`
-- `app.js`
-
-Danach GitHub Pages aktivieren.
-
-## Hinweis
-
-Der automatische Fallback verwendet externe öffentliche Infrastruktur. Das ist die einzige Möglichkeit, einen CORS-gesperrten Feed aus einer ausschließlich statischen GitHub-Pages-App heraus anzufragen. Für maximale Zuverlässigkeit und Kontrolle wäre ein eigener Server/Worker besser.
-
-Instagram bleibt bewusst ohne Fake-Daten. Dafür wird später ein offizieller API-/Backend-Adapter benötigt.
+Hinweis: Instagram selbst stellt keinen offiziellen loginfreien Feed beliebiger öffentlicher Profile für eine reine GitHub-Pages-App bereit. Der Drittanbieter-Adapter ist daher eine externe Abhängigkeit und kann bei Änderungen von Instagram ausfallen.
