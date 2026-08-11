@@ -1,78 +1,27 @@
-# Digital Signage Web-App
+# Digital Signage – GitHub Pages Version
 
-Eine browserbasierte 9:16-Digital-Signage-App mit:
+Diese Version ist für **reines GitHub Pages Hosting** optimiert.
 
-- RSS-Quellen
-- Speicherung in `localStorage`
-- 3 neuesten Artikeln pro RSS-Feed
-- Bild-Erkennung über `media:content`, `media:thumbnail`, `enclosure` und `<img>` in der Beschreibung
-- automatischer Slide-Wechsel
-- automatischer Aktualisierung
-- Admin-Bereich
-- 9:16-Live-Vorschau
-- Fehlerisolierung pro Quelle
-- vorbereitetem Adapter für Instagram
+GitHub Pages selbst ist statisches Hosting. Es kann daher fremde RSS-Feeds nicht serverseitig proxien. Die App versucht deshalb:
 
-## Start
+1. RSS direkt im Browser
+2. bei CORS-Fehlern automatisch einen RSS-Fallback
+3. wenn auch der Fallback nicht erreichbar ist, bleiben die zuletzt erfolgreich geladenen Inhalte sichtbar
 
-Einfach `index.html` in einem modernen Browser öffnen.
+Es gibt **kein Proxy-Feld und keine zusätzliche Konfiguration**.
 
-Für zuverlässiges Laden von RSS-Feeds empfiehlt sich ein lokaler/statischer Webserver, z.B.:
+## Deployment
 
-```bash
-python3 -m http.server 8080
-```
+Alle drei Dateien in das GitHub-Pages-Repository legen:
 
-Danach `http://localhost:8080` öffnen.
+- `index.html`
+- `styles.css`
+- `app.js`
 
-## Wichtige Browser-Einschränkung
+Danach GitHub Pages aktivieren.
 
-Viele RSS-Server erlauben keine Cross-Origin-Requests (CORS). Eine reine Frontend-App kann diese Sperre nicht umgehen. Deshalb enthält die App eine optionale Proxy-Konfiguration unter **Einstellungen → CORS-Proxy**.
+## Hinweis
 
-Der Proxy sollte sinngemäß:
+Der automatische Fallback verwendet externe öffentliche Infrastruktur. Das ist die einzige Möglichkeit, einen CORS-gesperrten Feed aus einer ausschließlich statischen GitHub-Pages-App heraus anzufragen. Für maximale Zuverlässigkeit und Kontrolle wäre ein eigener Server/Worker besser.
 
-`GET /<encoded-target-url>`
-
-an die Ziel-URL weiterleiten und die RSS/XML-Antwort mit passenden CORS-Headern zurückgeben.
-
-Für einen produktiven Einsatz sollte ein eigener kleiner Backend-/Proxy-Service verwendet werden.
-
-## Instagram
-
-Direktes Scraping öffentlicher Instagram-Profile aus dem Browser ist nicht zuverlässig und verstößt je nach Zugriffsmethode gegen technische/API-Beschränkungen. Die App zeigt deshalb keine erfundenen Inhalte.
-
-Die Datenquelle ist bereits getrennt und kann später über einen Backend-Adapter angebunden werden, idealerweise über die offizielle Instagram/Meta API. Die erwartete Normalform der Daten ist:
-
-```js
-{
-  id,
-  type: "instagram",
-  source,
-  title,
-  text,
-  image,
-  date,
-  link
-}
-```
-
-## Architektur
-
-- `app.js` – UI, State und Orchestrierung
-- `loadRSS()` / `parseRSS()` – RSS-Datenabruf und Normalisierung
-- `loadInstagram()` – Instagram-Adapter-Grenze
-- `localStorage` – persistente Browser-Speicherung
-- Display – getrennt von Admin-Ansicht
-- Fehler werden pro Quelle gespeichert und blockieren andere Quellen nicht
-
-## Erweiterung auf Backend
-
-Die Frontend-Adapter können später durch API-Aufrufe ersetzt werden. Empfehlenswert ist ein Backend mit Endpunkten wie:
-
-- `GET /api/sources`
-- `POST /api/sources`
-- `DELETE /api/sources/:id`
-- `GET /api/content`
-- `POST /api/refresh`
-
-Die Display-Komponente sollte weiterhin nur normalisierte Content-Objekte konsumieren.
+Instagram bleibt bewusst ohne Fake-Daten. Dafür wird später ein offizieller API-/Backend-Adapter benötigt.
